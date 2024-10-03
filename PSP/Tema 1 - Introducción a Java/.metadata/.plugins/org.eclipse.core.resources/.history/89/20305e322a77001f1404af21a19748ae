@@ -1,9 +1,0 @@
-package ejercicios;
-
-public class Ejercicio16 {
-	public static void main(String[] args) {
-		
-		System.out.print("Vamos a descubrir tu número de la suerte.");
-		System.out.print("Escribe tu fecha de nacimiento (**/**/**): ");
-	}
-}

@@ -1,7 +1,0 @@
-package ejercicios;
-
-//Genera archivos ejecutables (.JAR) de algunos ejercicios y ejecútalos por línea de comandos
-
-public class Ejercicio30 {
-
-}

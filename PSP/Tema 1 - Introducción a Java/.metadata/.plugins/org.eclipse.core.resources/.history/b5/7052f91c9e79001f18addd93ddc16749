@@ -1,0 +1,32 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+/*33. Escribe un método que sume los números pares hasta el número que acepta como
+parámetro y devuelva el resultado de la suma.
+*/
+public class Ejercicio33 {
+
+	public static void main (String[] args) {
+		sumaPares();
+	}
+	
+	public static void sumaPares() {
+		
+		Scanner teclado = new Scanner(System.in);
+		
+		System.out.print("Escribe el número hasta el cual quieres que sume los pares: ");
+		int numero = teclado.nextInt();
+		int suma = 0;
+		
+		for(int i = 0; i < numero; i++) {
+			if(numero % 2 == 0) {
+				suma = numero++;
+			} else {
+				
+			}
+		}
+		System.out.print();
+		teclado.close();
+	}
+}

@@ -1,0 +1,17 @@
+package ejercicios;
+import java.util.Scanner;
+
+public class Ejercicio06 {
+
+	public static void main(String[] args) {
+		ArrayList<Integer> arrayDeEnteros = new ArrayList<>();
+		
+		try(Scanner teclado = new Scanner(System.in)) {
+			System.out.println("Introduce 5 número para que pueda sumarlos");
+			
+			System.out.print("Introudce el primer número: ");
+			int numero1 = teclado.nextInt();
+			arrayDeEnteros.length;
+		}
+	}
+}

@@ -1,0 +1,9 @@
+package ejercicios;
+
+import java.math.*;
+
+public class Ejercicio34 {
+	public static void main(String[] args) {
+		BigInteger factorial;
+	}
+}

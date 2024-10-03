@@ -1,0 +1,34 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio11 {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        final String LETRAS = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+
+        System.out.print("Introduce el número del DNI (sin letra): ");
+        
+        // Verificar que la entrada es un número entero
+        if (teclado.hasNextInt()) {
+            int numeroDNI = teclado.nextInt();
+
+            // Validar que el número esté dentro del rango válido
+            if (numeroDNI >= 0 && numeroDNI <= 99999999) {
+                // Calcular la letra del DNI
+                int resto = numeroDNI % 23;
+                char letra = LETRAS.charAt(resto);
+
+                // Imprimir el DNI completo
+                System.out.println("El DNI completo es: " + numeroDNI + letra);
+            } else {
+                System.out.println("Número de DNI fuera del rango válido (0-99999999).");
+            }
+        } else {
+            System.out.println("Entrada inválida. Por favor, introduce un número entero.");
+            teclado.next(); // Limpiar la entrada incorrecta
+        }
+
+        teclado.close(); // Cerrar el Scanner después de usarlo
+    }
+}

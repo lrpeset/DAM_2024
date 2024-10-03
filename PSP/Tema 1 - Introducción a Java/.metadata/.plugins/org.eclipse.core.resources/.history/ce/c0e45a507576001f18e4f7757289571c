@@ -1,0 +1,10 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio09 {
+
+	try(Scanner teclado = new Scanner(System.in)) {
+		
+	}
+}

@@ -1,0 +1,14 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio38 {
+
+	public static void main(String[] args) {
+		Scanner teclado = new Scanner(System.in);
+		
+		System.out.println("Escribe dos números como intervalo: ");
+		System.out.print("Escribe el número más bajo de los dos: ");
+		int numeroBajo = teclado.nextInt();
+	}
+}

@@ -1,0 +1,21 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio37 {
+	public static void main(String[] args) {
+		Scanner teclado = new Scanner(System.in);
+		
+		System.out.print("Introduce tu nombre.");
+		String nombre = teclado.nextLine();
+		
+		System.out.print("Introduce el número de años de experiencia como desarrollador: ");
+		int anyos = teclado.nextInt();
+	}
+	
+	public static void mostrarSalario(String[] args) {
+		switch() {
+		
+		}
+	}
+}

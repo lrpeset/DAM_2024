@@ -1,0 +1,13 @@
+package ejercicios;
+import java.util.Scanner;
+
+public class Ejercicio05 {
+	public static void main(String[] args) {
+
+		try(Scanner teclado = new Scanner(System.in)) {
+			System.out.println("No acabaré hasta que ambos números sean iguales");
+			System.out.print("Introduce un primer número: ");
+			int numero1 = teclado.nextInt();
+		}
+	}
+}

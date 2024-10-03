@@ -1,0 +1,14 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio13 {
+	public static void main(String[] args) {
+		
+		try(Scanner teclado = new Scanner(System.in)) {
+			
+			System.out.print("Introduce los grados centígrados: ");
+			String grados = teclado.nextLine();
+		}
+	}
+}

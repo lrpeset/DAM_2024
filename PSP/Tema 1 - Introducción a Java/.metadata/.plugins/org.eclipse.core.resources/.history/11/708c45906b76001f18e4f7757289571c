@@ -1,0 +1,9 @@
+package ejercicios;
+
+public class Ejercicio01 {
+	//Realiza un programa que a partir de dos números (introducidos en el código) muestre su suma por pantalla.
+int numero1 = 1;
+int numero2 = 3;
+
+
+}

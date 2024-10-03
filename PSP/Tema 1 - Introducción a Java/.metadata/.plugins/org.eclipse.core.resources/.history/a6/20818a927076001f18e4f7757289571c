@@ -1,0 +1,13 @@
+package ejercicios;
+import java.util.Scanner;
+
+public class Ejercicio06 {
+
+	public static void main(String[] args) {
+		int arrayDeEnteros[] = null;
+		
+		try(Scanner teclado = new Scanner(System.in)) {
+			
+		}
+	}
+}

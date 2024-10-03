@@ -1,0 +1,11 @@
+package ejercicios;
+
+public class Ejercicio31 {
+
+	public static class Salute {
+
+		public void sayHello() {
+
+		}
+	}
+}

@@ -1,0 +1,15 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio02 {
+	public static void main(String[] args) {
+
+		try (Scanner teclado = new Scanner(System.in)) {
+			System.out.print("Introduce tu nombre: ");
+			String nombre = teclado.nextLine();
+
+			System.out.print("Hola " + nombre);
+		}
+	}
+}

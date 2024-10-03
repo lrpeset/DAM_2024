@@ -1,0 +1,9 @@
+package ejercicios;
+
+javac -d bin src/ejercicios/*.java
+
+//Genera archivos ejecutables (.JAR) de algunos ejercicios y ejecútalos por línea de comandos
+
+public class Ejercicio30 {
+
+}

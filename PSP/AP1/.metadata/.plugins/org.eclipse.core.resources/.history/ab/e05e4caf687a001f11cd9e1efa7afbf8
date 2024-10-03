@@ -1,0 +1,16 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio36 {
+
+	public static void main(String[] args) {
+		
+		
+		System.out.println("Introduce 5 numeros enteros: ");
+	}
+	
+	public static void ordenarNumeros() {
+		
+	}
+}

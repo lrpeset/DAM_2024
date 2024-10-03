@@ -1,0 +1,13 @@
+package ejercicios;
+
+import java.util.Scanner;
+
+public class Ejercicio08 {
+	public static void main(String[] args) {
+		System.out.println("Escribe un número del 1 al 12 y te diré a qué mes corresponde: ");
+		
+		try(Scanner teclado = new Scanner(System.in)) {
+			String mes = teclado.nextLine();
+		}
+	}
+}

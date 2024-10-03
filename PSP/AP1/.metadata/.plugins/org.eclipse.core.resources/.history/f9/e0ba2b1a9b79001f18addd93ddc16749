@@ -1,0 +1,11 @@
+package ejercicios;
+/*32. Crea un array de elementos que contenga el nombre de 6 compañeros de clase y haz que se
+escriban por la consola en líneas consecutivas. Ahora haz lo mismo, pero empleando un
+objeto de tipo lista.
+*/
+public class Ejercicio32 {
+
+	public static void main (String[] args) {
+		
+	}
+}

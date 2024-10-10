@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"FileExplorer","l":"FileManagerWithSearch"},{"p":"FileExplorer","l":"FileOperations"},{"p":"FileExplorer","l":"Main"},{"p":"FileExplorer","l":"SearchPanel"}];updateSearchResults();

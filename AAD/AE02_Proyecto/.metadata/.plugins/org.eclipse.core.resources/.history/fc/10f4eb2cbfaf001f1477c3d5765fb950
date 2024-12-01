@@ -1,0 +1,143 @@
+package controller;
+
+import model.AdminActions;
+import model.DatabaseConnection;
+import model.User;
+import view.ClientView;
+import javax.swing.*;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ClientController {
+    private final ClientView view;
+    private final AdminActions adminActions;
+    private final String currentUserLogin;
+    private List<String[]> currentQueryResults;
+
+    public ClientController(ClientView view, Connection connection, String currentUserLogin) {
+        this.view = view;
+        this.adminActions = new AdminActions(connection);
+        this.currentUserLogin = currentUserLogin;
+
+        this.view.getSqlQueryButton().addActionListener(e -> handleSqlQuery());
+        this.view.getExportCsvButton().addActionListener(e -> handleExportToCsv());
+        this.view.getLogoutButton().addActionListener(e -> handleLogout());
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+
+    }
+
+    public void start() {
+        view.setVisible(true);
+    }
+
+
+    private void handleExportToCsv() {
+        if (currentQueryResults == null || currentQueryResults.isEmpty()) {
+            view.showMessage("No hay resultados para exportar.");
+            return;
+        }
+
+        try {
+            List<Map<String, Object>> mappedResults = convertResultsToMap(currentQueryResults);
+
+            String directoryPath = "csv";
+            String csvFileName = "resultado_consulta.csv";
+            String csvFilePath = directoryPath + File.separator + csvFileName;
+
+            File directory = new File(directoryPath);
+            if (!directory.exists()) {
+                directory.mkdirs();
+                System.out.println("Directorio creado: " + directoryPath);
+            }
+
+            adminActions.exportToCsv(mappedResults, csvFilePath);
+            view.showMessage("Datos exportados a: " + csvFilePath);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al exportar datos: " + ex.getMessage());
+        }
+    }
+
+
+
+    private List<Map<String, Object>> convertResultsToMap(List<String[]> results) {
+        List<Map<String, Object>> mappedResults = new ArrayList<>();
+        
+        if (results.isEmpty()) {
+            return mappedResults;
+        }
+
+        String[] headers = results.get(0);
+
+        for (int i = 1; i < results.size(); i++) {
+            String[] row = results.get(i);
+            Map<String, Object> rowMap = new HashMap<>();
+            for (int j = 0; j < headers.length; j++) {
+                rowMap.put(headers[j], row[j]);
+            }
+            mappedResults.add(rowMap);
+        }
+        return mappedResults;
+    }
+
+
+
+    private void handleSqlQuery() {
+        String sqlQuery = JOptionPane.showInputDialog(view, "Introduce tu consulta SQL:");
+
+        if (sqlQuery == null || sqlQuery.trim().isEmpty()) {
+            view.showMessage("La consulta no puede estar vacía.");
+            return;
+        }
+
+        String userType = currentUserLogin.equals("admin") ? "admin" : "client";
+
+        try {
+            List<String[]> results = adminActions.executeSelectQuery(sqlQuery, userType);
+            if (results.isEmpty()) {
+                view.showMessage("La consulta no devolvió resultados.");
+            } else {
+                currentQueryResults = results;
+                view.displayQueryResults(results);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al ejecutar la consulta: " + ex.getMessage());
+        }
+    }
+    
+    private void handleLogin() {
+        try {
+            Connection connection = DatabaseConnection.getConnection();
+            adminActions.setConnection(connection);
+
+            view.toggleLoginLogout(true);
+            view.showMessage("Conexión establecida con éxito.");
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al conectar a la base de datos: " + ex.getMessage());
+        }
+    }
+
+
+    private void handleLogout() {
+        try {
+            adminActions.closeConnection();
+
+            view.toggleLoginLogout(false);
+            view.showMessage("Sesión cerrada exitosamente.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al cerrar la sesión: " + ex.getMessage());
+        }
+    }
+    private boolean isConnectionActive() {
+        return adminActions.isConnectionActive();
+    }
+}

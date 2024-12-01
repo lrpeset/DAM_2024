@@ -1,0 +1,17 @@
+package controller;
+
+import view.UserView;
+
+import java.sql.Connection;
+
+public class UserController {
+    private UserView view;
+
+    public UserController(UserView view, Connection connection) {
+        this.view = view;
+    }
+
+    public void start() {
+        view.setVisible(true);
+    }
+}

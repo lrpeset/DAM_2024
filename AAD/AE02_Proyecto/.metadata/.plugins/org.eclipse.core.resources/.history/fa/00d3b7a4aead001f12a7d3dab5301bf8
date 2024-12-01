@@ -1,0 +1,40 @@
+package controller;
+
+import view.LoginView;
+import view.AdminView;
+import view.UserView;
+
+public class LoginController {
+    private LoginModel model;
+    private LoginView view;
+
+    public LoginController(LoginModel model, LoginView view) {
+        this.model = model;
+        this.view = view;
+
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    private void handleLogin() {
+        String username = view.getUsername();
+        String password = view.getPassword();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            view.setMessage("Por favor, completa todos los campos.");
+            return;
+        }
+
+        String userType = model.validateUser(username, password);
+        if (userType != null) {
+            view.setMessage("Inicio de sesión exitoso.");
+            if (userType.equals("admin")) {
+                new AdminController(new AdminView(), model.getConnection()).start();
+            } else if (userType.equals("user")) {
+                new UserController(new UserView(), model.getConnection()).start();
+            }
+            view.dispose(); // Cierra la ventana de login.
+        } else {
+            view.setMessage("Usuario o contraseña incorrectos.");
+        }
+    }
+}

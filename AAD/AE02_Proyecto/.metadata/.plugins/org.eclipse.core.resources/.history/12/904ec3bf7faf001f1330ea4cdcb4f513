@@ -1,0 +1,92 @@
+package model;
+
+import utils.Authentication;
+import utils.CsvProcessor;
+import utils.XmlProcessor;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class AdminActions {
+    private Connection connection;
+    private final CsvProcessor csvProcessor;
+    private final XmlProcessor xmlProcessor;
+
+    public AdminActions(Connection connection) {
+        this.connection = connection;
+        this.csvProcessor = new CsvProcessor(connection);
+        this.xmlProcessor = new XmlProcessor();
+    }
+
+    public void establishConnection() throws SQLException {
+        if (connection == null || connection.isClosed()) {
+            connection = DatabaseConnection.getConnection();
+        }
+    }
+
+    public void closeConnection() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+    }
+
+    public boolean registerUser(User adminUser, User newUser) {
+        if (!"admin".equals(adminUser.getUserType())) return false;
+
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, newUser.getUsername());
+            stmt.setString(2, Authentication.hashPassword(newUser.getHashedPassword()));
+            stmt.setString(3, newUser.getUserType());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public String processCsvAndGenerateXml(String csvFilePath) throws Exception {
+        clearPopulationTable();
+        return csvProcessor.processCsvAndGenerateXml(csvFilePath, xmlProcessor);
+    }
+
+    public String exportQueryResultsToCsv(List<String[]> queryResults) throws Exception {
+        return csvProcessor.exportQueryResultsToCsv(queryResults);
+    }
+
+    public List<String[]> executeSelectQuery(String query, String userType) throws Exception {
+        if ("client".equals(userType) && !query.toLowerCase().contains("from population")) {
+            throw new IllegalAccessException("Los usuarios 'client' solo pueden consultar la tabla 'population'.");
+        }
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            int columnCount = rs.getMetaData().getColumnCount();
+            List<String[]> results = new ArrayList<>();
+
+            String[] headers = new String[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                headers[i - 1] = rs.getMetaData().getColumnName(i);
+            }
+            results.add(headers);
+
+            while (rs.next()) {
+                String[] row = new String[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    row[i - 1] = rs.getString(i);
+                }
+                results.add(row);
+            }
+
+            return results;
+        }
+    }
+
+    private void clearPopulationTable() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate("DELETE FROM population");
+        }
+    }
+}

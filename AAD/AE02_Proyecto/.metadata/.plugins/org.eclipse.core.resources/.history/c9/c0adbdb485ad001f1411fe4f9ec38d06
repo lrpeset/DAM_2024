@@ -1,0 +1,44 @@
+package controller;
+
+import model.LoginModel;
+import view.LoginView;
+import view.AdminView;
+import view.UserView;
+
+public class LoginController {
+    private LoginModel model;
+    private LoginView view;
+
+    public LoginController(LoginModel model, LoginView view) {
+        this.model = model;
+        this.view = view;
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    private void handleLogin() {
+        String username = view.getUsername();
+        String password = view.getPassword();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            view.setMessage("Por favor, completa todos los campos.");
+            return;
+        }
+
+        if (model.validateUser(username, password)) {
+            String type = model.getUserType(username);
+
+            if ("admin".equals(type)) {
+                AdminView adminView = new AdminView();
+                adminView.setVisible(true);
+                view.setVisible(false);
+
+            } else if ("user".equals(type)) {
+                UserView userView = new UserView();
+                userView.setVisible(true);
+                view.setVisible(false);
+            }
+        } else {
+            view.setMessage("Credenciales incorrectas.");
+        }
+    }
+}

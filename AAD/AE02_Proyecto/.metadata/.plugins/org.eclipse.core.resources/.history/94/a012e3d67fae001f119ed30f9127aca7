@@ -1,0 +1,49 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class AdminView extends JFrame {
+    private JTextArea xmlTextArea;
+    private JButton importCsvButton;
+    private JButton registerUserButton;
+    private JLabel messageLabel;
+
+    public AdminView() {
+        setTitle("Panel de Administrador");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        xmlTextArea = new JTextArea();
+        xmlTextArea.setEditable(false);
+        add(new JScrollPane(xmlTextArea), BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
+        importCsvButton = new JButton("Importar CSV");
+        registerUserButton = new JButton("Registrar Usuario");
+        buttonPanel.add(importCsvButton);
+        buttonPanel.add(registerUserButton);
+        add(buttonPanel, BorderLayout.NORTH);
+
+        messageLabel = new JLabel(" ");
+        add(messageLabel, BorderLayout.SOUTH);
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterButton() {
+        return registerUserButton;
+    }
+
+    public void setXmlContent(String content) {
+        xmlTextArea.setText(content);
+    }
+
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+}

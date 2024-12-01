@@ -1,0 +1,49 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class RegisterView extends JFrame {
+	private JTextField txtLogin;
+	private JPasswordField txtPassword;
+	private JPasswordField txtConfirmPassword;
+	private JButton btnRegister;
+
+	public RegisterView() {
+		setTitle("Registrar Nuevo Usuario");
+		setSize(400, 300);
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		setLayout(new GridLayout(4, 2, 10, 10));
+
+		add(new JLabel("Nombre de Usuario:"));
+		txtLogin = new JTextField();
+		add(txtLogin);
+
+		add(new JLabel("Contraseña:"));
+		txtPassword = new JPasswordField();
+		add(txtPassword);
+
+		add(new JLabel("Confirmar Contraseña:"));
+		txtConfirmPassword = new JPasswordField();
+		add(txtConfirmPassword);
+
+		btnRegister = new JButton("Registrar");
+		add(btnRegister);
+	}
+
+	public JTextField getTxtLogin() {
+		return txtLogin;
+	}
+
+	public JPasswordField getTxtPassword() {
+		return txtPassword;
+	}
+
+	public JPasswordField getTxtConfirmPassword() {
+		return txtConfirmPassword;
+	}
+
+	public JButton getBtnRegister() {
+		return btnRegister;
+	}
+}

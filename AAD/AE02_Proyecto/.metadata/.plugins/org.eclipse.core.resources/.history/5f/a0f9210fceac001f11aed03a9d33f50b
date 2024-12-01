@@ -1,0 +1,64 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+public class RegisterModel {
+	private Connection connection;
+
+	public RegisterModel(Connection connection) {
+		this.connection = connection;
+	}
+
+	public boolean registerUser(String username, String password) {
+		String hashedPassword = hashPassword(password);
+		if (hashedPassword == null) {
+			return false;
+		}
+
+		String sql = "INSERT INTO users (username, password, type) VALUES (?, ?, ?)";
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			stmt.setString(1, username);
+			stmt.setString(2, hashedPassword);
+			stmt.setString(3, "client");
+			int rowsAffected = stmt.executeUpdate();
+
+			if (rowsAffected > 0) {
+				grantPermissions(username);
+				return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	private String hashPassword(String password) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] hashBytes = md.digest(password.getBytes());
+			StringBuilder hexString = new StringBuilder();
+			for (byte b : hashBytes) {
+				hexString.append(Integer.toHexString(0xFF & b));
+			}
+			return hexString.toString();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	private void grantPermissions(String username) {
+		String sql = "GRANT SELECT ON population.population TO ?";
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			stmt.setString(1, username);
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+}

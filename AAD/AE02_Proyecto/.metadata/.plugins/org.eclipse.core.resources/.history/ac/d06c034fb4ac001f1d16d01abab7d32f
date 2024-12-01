@@ -1,0 +1,81 @@
+package controller;
+
+import java.security.MessageDigest;
+import java.sql.*;
+import javax.swing.JOptionPane;
+
+import view.RegisterView;
+
+public class RegisterController {
+	private RegisterView registerView;
+	private Connection connection;
+
+	public RegisterController(RegisterView registerView, Connection connection) {
+		this.registerView = registerView;
+		this.connection = connection;
+
+		registerView.getBtnRegister().addActionListener(e -> registerUser());
+	}
+
+	private void registerUser() {
+		String login = registerView.getTxtLogin().getText();
+		String password = new String(registerView.getTxtPassword().getPassword());
+		String confirmPassword = new String(registerView.getTxtConfirmPassword().getPassword());
+
+		if (login.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+			JOptionPane.showMessageDialog(registerView, "Todos los campos son obligatorios.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		if (!password.equals(confirmPassword)) {
+			JOptionPane.showMessageDialog(registerView, "Las contraseñas no coinciden.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		try {
+			PreparedStatement checkUser = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE login = ?");
+			checkUser.setString(1, login);
+			ResultSet rs = checkUser.executeQuery();
+			if (rs.next() && rs.getInt(1) > 0) {
+				JOptionPane.showMessageDialog(registerView, "El usuario ya existe.", "Error",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			String hashedPassword = hashMD5(password);
+
+			PreparedStatement insertUser = connection
+					.prepareStatement("INSERT INTO users (login, password, type) VALUES (?, ?, 'client')");
+			insertUser.setString(1, login);
+			insertUser.setString(2, hashedPassword);
+			insertUser.executeUpdate();
+
+			Statement statement = connection.createStatement();
+			statement.executeUpdate("CREATE USER '" + login + "' IDENTIFIED BY '" + hashedPassword + "'");
+			statement.executeUpdate("GRANT SELECT ON population.population TO '" + login + "'");
+
+			JOptionPane.showMessageDialog(registerView, "Usuario registrado con éxito.", "Éxito",
+					JOptionPane.INFORMATION_MESSAGE);
+		} catch (Exception e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(registerView, "Error al registrar el usuario.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private String hashMD5(String input) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] messageDigest = md.digest(input.getBytes());
+			StringBuilder sb = new StringBuilder();
+			for (byte b : messageDigest) {
+				sb.append(String.format("%02x", b));
+			}
+			return sb.toString();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+}

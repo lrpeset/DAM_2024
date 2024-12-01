@@ -1,0 +1,40 @@
+package controller;
+
+import view.MainView;
+import javax.swing.*;
+import java.io.File;
+
+public class MainController {
+	private MainView mainView;
+
+	public MainController(MainView mainView) {
+		this.mainView = mainView;
+
+		this.mainView.addSelectCSVListener(e -> selectCSVFile());
+	}
+
+	private void selectCSVFile() {
+		String filePath = getCSVFilePath();
+
+		if (filePath != null) {
+			mainView.setOutputText("Archivo seleccionado: " + filePath);
+		} else {
+			mainView.setOutputText("No se seleccionó ningún archivo.");
+		}
+	}
+
+	private String getCSVFilePath() {
+		JFileChooser fileChooser = new JFileChooser();
+
+		fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Archivos CSV", "csv"));
+
+		int result = fileChooser.showOpenDialog(null);
+
+		if (result == JFileChooser.APPROVE_OPTION) {
+			File selectedFile = fileChooser.getSelectedFile();
+			return selectedFile.getAbsolutePath();
+		} else {
+			return null;
+		}
+	}
+}

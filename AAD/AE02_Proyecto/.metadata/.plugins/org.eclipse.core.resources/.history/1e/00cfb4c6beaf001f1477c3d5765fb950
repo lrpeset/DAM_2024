@@ -1,0 +1,29 @@
+package view;
+
+import javax.swing.*;
+import java.util.Map;
+
+public class ClientView extends BaseView {
+    private final JButton sqlQueryButton;
+
+    public ClientView() {
+        super("Panel de Cliente");
+
+        sqlQueryButton = new JButton("Hacer Consulta SQL");
+
+        addButton(sqlQueryButton);
+        addButton(logoutButton);
+        addButton(loginButton);
+
+        setButtonVisibility(Map.of(
+            sqlQueryButton, true,
+            exportCsvButton, true,
+            logoutButton, true,
+            loginButton, false
+        ));
+    }
+
+    public JButton getSqlQueryButton() {
+        return sqlQueryButton;
+    }
+}

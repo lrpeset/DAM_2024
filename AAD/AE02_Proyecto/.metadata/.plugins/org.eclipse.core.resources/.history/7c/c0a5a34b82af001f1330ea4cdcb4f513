@@ -1,0 +1,68 @@
+package controller;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import view.LoginView;
+import view.AdminView;
+import view.UserView;
+import utils.Authentication;  // Asegúrate de importar tu clase de autenticación
+
+public class LoginController {
+    private Connection connection;
+    private LoginView view;
+
+    public LoginController(Connection connection, LoginView view) {
+        this.connection = connection;
+        this.view = view;
+
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    private void handleLogin() {
+        String username = view.getUsername();
+        String password = view.getPassword();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            view.setMessage("Por favor, completa todos los campos.");
+            return;
+        }
+
+        String hashedPassword = Authentication.hashPassword(password);
+
+        String userType = validateUser(username, hashedPassword);
+        if (userType != null) {
+            view.setMessage("Inicio de sesión exitoso.");
+
+            if (userType.equals("admin")) {
+                AdminController adminController = new AdminController(new AdminView(), connection, userType);
+                adminController.start();
+            } else if (userType.equals("client")) {
+                UserController userController = new UserController(new UserView(), connection);
+                userController.start();
+            }
+
+            view.dispose();
+        } else {
+            view.setMessage("Usuario o contraseña incorrectos.");
+        }
+    }
+
+    private String validateUser(String username, String hashedPassword) {
+        String query = "SELECT type FROM users WHERE login = ? AND password = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, hashedPassword);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("type");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+}

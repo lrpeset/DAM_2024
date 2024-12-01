@@ -1,0 +1,50 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class LoginView extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton;
+    private JLabel messageLabel;
+
+    public LoginView() {
+        setTitle("Inicio de Sesión");
+        setSize(400, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel(new GridLayout(4, 1));
+
+        usernameField = new JTextField();
+        passwordField = new JPasswordField();
+        loginButton = new JButton("Iniciar sesión");
+        messageLabel = new JLabel("", SwingConstants.CENTER);
+
+        panel.add(new JLabel("Usuario:"));
+        panel.add(usernameField);
+        panel.add(new JLabel("Contraseña:"));
+        panel.add(passwordField);
+
+        add(panel, BorderLayout.CENTER);
+        add(loginButton, BorderLayout.SOUTH);
+        add(messageLabel, BorderLayout.NORTH);
+    }
+
+    public String getUsername() {
+        return usernameField.getText().trim();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword()).trim();
+    }
+
+    public JButton getLoginButton() {
+        return loginButton;
+    }
+
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+}

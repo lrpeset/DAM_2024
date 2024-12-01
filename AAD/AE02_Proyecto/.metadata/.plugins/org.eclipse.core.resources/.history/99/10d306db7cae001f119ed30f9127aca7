@@ -1,0 +1,39 @@
+//package view;
+//
+//import javax.swing.*;
+//import java.awt.*;
+//
+//public class AdminView extends JFrame {
+//    private JTextArea xmlTextArea;
+//    private JButton importButton;
+//    private JLabel messageLabel;
+//
+//    public AdminView() {
+//        setTitle("Administrador - Importar CSV");
+//        setSize(600, 400);
+//        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+//        setLayout(new BorderLayout());
+//
+//        xmlTextArea = new JTextArea();
+//        xmlTextArea.setEditable(false);
+//        add(new JScrollPane(xmlTextArea), BorderLayout.CENTER);
+//
+//        importButton = new JButton("Importar CSV");
+//        add(importButton, BorderLayout.NORTH);
+//
+//        messageLabel = new JLabel(" ");
+//        add(messageLabel, BorderLayout.SOUTH);
+//    }
+//
+//    public JButton getImportButton() {
+//        return importButton;
+//    }
+//
+//    public void setXmlContent(String content) {
+//        xmlTextArea.setText(content);
+//    }
+//
+//    public void setMessage(String message) {
+//        messageLabel.setText(message);
+//    }
+//}

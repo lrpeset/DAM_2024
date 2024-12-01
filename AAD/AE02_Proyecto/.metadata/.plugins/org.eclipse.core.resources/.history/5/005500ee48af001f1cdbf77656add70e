@@ -1,0 +1,22 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class UserView extends JFrame {
+    private JLabel welcomeLabel;
+    private JButton performActionButton;
+
+    public UserView() {
+        setTitle("Panel de Usuario");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        welcomeLabel = new JLabel("Bienvenido, Usuario", SwingConstants.CENTER);
+        add(welcomeLabel, BorderLayout.NORTH);
+
+        performActionButton = new JButton("Realizar Acción");
+        add(performActionButton, BorderLayout.CENTER);
+    }
+}

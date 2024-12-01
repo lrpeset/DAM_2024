@@ -1,0 +1,48 @@
+import org.w3c.dom.*;
+import javax.xml.parsers.*;
+import java.io.*;
+
+public String[] parseXmlContent(File xmlFile) {
+    try {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+
+        Document document = builder.parse(xmlFile);
+        document.getDocumentElement().normalize(); 
+
+        NodeList nodeList = document.getElementsByTagName("person");
+        if (nodeList.getLength() > 0) {
+            Node personNode = nodeList.item(0);
+
+            if (personNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element element = (Element) personNode;
+
+                String country = getTagValue("country", element);
+                String population = getTagValue("population", element);
+                String density = getTagValue("density", element);
+                String area = getTagValue("area", element);
+                String fertility = getTagValue("fertility", element);
+                String age = getTagValue("age", element);
+                String urban = getTagValue("urban", element);
+                String share = getTagValue("share", element);
+
+                return new String[]{country, population, density, area, fertility, age, urban, share};
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return new String[]{};
+}
+
+private String getTagValue(String tag, Element element) {
+    NodeList nlList = element.getElementsByTagName(tag);
+    if (nlList.getLength() != 0) {
+        Node nValue = nlList.item(0).getFirstChild();
+        if (nValue != null) {
+            return nValue.getNodeValue();
+        }
+    }
+    return "";
+}

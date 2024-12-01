@@ -1,0 +1,180 @@
+package view;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.util.function.Function;
+import java.awt.event.ActionEvent;
+
+public class AdminView extends JFrame {
+    private final JButton registerButton;
+    private final JButton importCsvButton;
+    private final JButton sqlQueryButton;
+    private final JButton exportCsvButton;
+    private final JButton logoutButton;
+    private final JButton loginButton;
+    private final JTable resultsTable;
+    private final JLabel statusLabel;
+
+    public AdminView() {
+        // Configuración de la ventana principal
+        setTitle("Admin Panel");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Panel de botones
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(1, 6));
+        
+        registerButton = new JButton("Registrar Usuario");
+        importCsvButton = new JButton("Importar CSV");
+        sqlQueryButton = new JButton("Consulta SQL");
+        exportCsvButton = new JButton("Exportar a CSV");
+        loginButton = new JButton("Conectar");
+        logoutButton = new JButton("Desconectar");
+        
+        buttonPanel.add(registerButton);
+        buttonPanel.add(importCsvButton);
+        buttonPanel.add(sqlQueryButton);
+        buttonPanel.add(exportCsvButton);
+        buttonPanel.add(loginButton);
+        buttonPanel.add(logoutButton);
+        
+        // Tabla para mostrar resultados
+        resultsTable = new JTable();
+        JScrollPane tableScrollPane = new JScrollPane(resultsTable);
+        
+        // Barra de estado
+        statusLabel = new JLabel("Estado: No conectado");
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Agregar componentes a la ventana
+        add(buttonPanel, BorderLayout.NORTH);
+        add(tableScrollPane, BorderLayout.CENTER);
+        add(statusLabel, BorderLayout.SOUTH);
+    }
+
+    // Métodos para obtener botones
+    public JButton getRegisterButton() {
+        return registerButton;
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getSqlQueryButton() {
+        return sqlQueryButton;
+    }
+
+    public JButton getExportCsvButton() {
+        return exportCsvButton;
+    }
+
+    public JButton getLogoutButton() {
+        return logoutButton;
+    }
+
+    public JButton getLoginButton() {
+        return loginButton;
+    }
+
+    // Mostrar un mensaje en la barra de estado o un diálogo
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+
+    // Mostrar el contenido de un XML en un cuadro de diálogo
+    public void displayXmlContent(String xmlContent) {
+        JTextArea textArea = new JTextArea(xmlContent);
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(500, 400));
+
+        JOptionPane.showMessageDialog(this, scrollPane, "Contenido XML", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // Mostrar resultados en la tabla
+    public void displayQueryResults(java.util.List<String[]> results) {
+        DefaultTableModel tableModel = new DefaultTableModel();
+        
+        if (results.isEmpty()) {
+            tableModel.addColumn("Sin Resultados");
+        } else {
+            String[] headers = results.get(0);
+            tableModel.setColumnIdentifiers(headers);
+
+            for (int i = 1; i < results.size(); i++) {
+                tableModel.addRow(results.get(i));
+            }
+        }
+
+        resultsTable.setModel(tableModel);
+    }
+
+    // Cambiar el estado del botón de conexión/desconexión
+    public void toggleLoginLogout(boolean isConnected) {
+        loginButton.setEnabled(!isConnected);
+        logoutButton.setEnabled(isConnected);
+        statusLabel.setText("Estado: " + (isConnected ? "Conectado" : "No conectado"));
+    }
+
+    // Crear el formulario para registrar un usuario
+    public JFrame createRegisterUserFrame() {
+        JFrame frame = new JFrame("Registrar Usuario");
+        frame.setSize(400, 300);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(4, 2, 10, 10));
+        frame.add(panel, BorderLayout.CENTER);
+
+        JLabel loginLabel = new JLabel("Usuario:");
+        JTextField loginField = new JTextField();
+
+        JLabel passwordLabel = new JLabel("Contraseña:");
+        JPasswordField passwordField = new JPasswordField();
+
+        JLabel confirmPasswordLabel = new JLabel("Confirmar Contraseña:");
+        JPasswordField confirmPasswordField = new JPasswordField();
+
+        JButton submitButton = new JButton("Registrar");
+
+        panel.add(loginLabel);
+        panel.add(loginField);
+        panel.add(passwordLabel);
+        panel.add(passwordField);
+        panel.add(confirmPasswordLabel);
+        panel.add(confirmPasswordField);
+        panel.add(new JLabel()); // Espacio vacío
+        panel.add(submitButton);
+
+        frame.setLocationRelativeTo(this);
+
+        // Pasar datos al controlador mediante una función
+        submitButton.addActionListener(e -> {
+            String[] userData = new String[]{
+                loginField.getText(),
+                new String(passwordField.getPassword()),
+                new String(confirmPasswordField.getPassword())
+            };
+
+            boolean success = onRegister.apply(userData);
+            if (success) {
+                frame.dispose();
+            }
+        });
+
+
+        return frame;
+    }
+
+    // Agregar listeners para el registro de usuarios
+    public void addRegisterUserListeners(JFrame frame, Function<String[], Boolean> onRegister) {
+        for (ActionListener listener : frame.getActionListeners()) {
+            listener.add(onRegister::apply);
+        }
+    }
+}

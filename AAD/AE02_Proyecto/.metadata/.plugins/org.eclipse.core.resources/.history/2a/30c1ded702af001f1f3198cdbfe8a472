@@ -1,0 +1,116 @@
+package controller;
+
+import model.AdminActions;
+import model.User;
+import view.AdminView;
+
+import javax.swing.*;
+import java.sql.Connection;
+import java.util.List;
+
+public class AdminController {
+    private final AdminView view;
+    private final AdminActions adminActions;
+    private final String currentUserLogin;
+
+    public AdminController(AdminView view, Connection connection, String currentUserLogin) {
+        this.view = view;
+        this.adminActions = new AdminActions(connection);
+        this.currentUserLogin = currentUserLogin;
+
+        this.view.getRegisterButton().addActionListener(e -> openRegisterUserFrame());
+        this.view.getImportCsvButton().addActionListener(e -> handleImportCsv());
+        this.view.getSqlQueryButton().addActionListener(e -> handleSqlQuery());
+    }
+
+    public void start() {
+        view.setVisible(true);
+    }
+
+    private void openRegisterUserFrame() {
+        if (!"admin".equals(currentUserLogin)) {
+            view.showMessage("No tienes permisos para registrar usuarios.");
+            return;
+        }
+
+        JFrame registerFrame = view.createRegisterUserFrame();
+        view.addRegisterUserListeners(registerFrame, userData -> {
+            boolean isValid = validateUserData(userData);
+            if (!isValid) return false;
+
+            User adminUser = new User(currentUserLogin, "", "admin");
+            User newUser = new User(userData[0], userData[1], "client");
+
+            boolean success = adminActions.registerUser(adminUser, newUser);
+            view.showMessage(success ? "Usuario registrado con éxito." : "Error al registrar usuario.");
+            return success;
+        });
+
+        registerFrame.setVisible(true);
+    }
+
+    private boolean validateUserData(String[] userData) {
+        String login = userData[0];
+        String password = userData[1];
+        String confirmPassword = userData[2];
+
+        if (login.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            view.showMessage("Por favor, completa todos los campos.");
+            return false;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            view.showMessage("Las contraseñas no coinciden.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void handleImportCsv() {
+        if (!"admin".equals(currentUserLogin)) {
+            view.showMessage("Solo los administradores pueden importar CSV.");
+            return;
+        }
+
+        try {
+            String xmlContent = adminActions.processCsvAndGenerateXml("csv/AE02_population.csv");
+            view.displayXmlContent(xmlContent);
+            view.showMessage("Archivo CSV importado y XMLs generados exitosamente.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al importar CSV: " + ex.getMessage());
+        }
+    }
+    
+    
+    private void handleSqlQuery() {
+        String sqlQuery = JOptionPane.showInputDialog(view, "Introduce tu consulta SQL:");
+
+        if (sqlQuery == null || sqlQuery.trim().isEmpty()) {
+            view.showMessage("La consulta no puede estar vacía.");
+            return;
+        }
+
+        if ("client".equals(currentUserLogin)) {
+            if (!sqlQuery.toLowerCase().contains("from population")) {
+                view.showMessage("Solo puedes consultar datos de la tabla 'population'.");
+                return;
+            }
+        }
+
+        try {            
+            List<String[]> results = adminActions.executeSelectQuery(sqlQuery);
+            if (results.isEmpty()) {
+                view.showMessage("La consulta no devolvió resultados.");
+            } else {
+                view.displayQueryResults(results);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al ejecutar la consulta: " + ex.getMessage());
+        }
+    }
+
+
+}

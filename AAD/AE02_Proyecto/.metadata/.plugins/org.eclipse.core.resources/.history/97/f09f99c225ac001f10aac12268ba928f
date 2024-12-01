@@ -1,0 +1,56 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class AdminDashboardView extends JFrame {
+	private JButton importCsvButton;
+	private JButton exportCsvButton;
+	private JButton manageUsersButton;
+	private JButton executeQueryButton;
+	private JButton logoutButton;
+
+	public AdminDashboardView() {
+		setTitle("Admin Dashboard");
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setSize(400, 300);
+		setLayout(new GridLayout(5, 1));
+
+		importCsvButton = new JButton("Import CSV");
+		add(importCsvButton);
+
+		exportCsvButton = new JButton("Export CSV");
+		add(exportCsvButton);
+
+		manageUsersButton = new JButton("Manage Users");
+		add(manageUsersButton);
+
+		executeQueryButton = new JButton("Execute Query");
+		add(executeQueryButton);
+
+		logoutButton = new JButton("Logout");
+		add(logoutButton);
+
+		setLocationRelativeTo(null);
+	}
+
+	public JButton getImportCsvButton() {
+		return importCsvButton;
+	}
+
+	public JButton getExportCsvButton() {
+		return exportCsvButton;
+	}
+
+	public JButton getManageUsersButton() {
+		return manageUsersButton;
+	}
+
+	public JButton getExecuteQueryButton() {
+		return executeQueryButton;
+	}
+
+	public JButton getLogoutButton() {
+		return logoutButton;
+	}
+}

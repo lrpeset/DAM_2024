@@ -1,0 +1,45 @@
+package app;
+
+import org.w3c.dom.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileWriter;
+
+public class XMLGenerator {
+
+    public void generateXML(String[] data) {
+        try {
+            String country = data[0]; 
+            File xmlFile = new File("xml/" + country + ".xml");
+            xmlFile.getParentFile().mkdirs();
+            xmlFile.createNewFile();
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.newDocument();
+
+            Element rootElement = document.createElement("population");
+            document.appendChild(rootElement);
+
+            for (int i = 0; i < data.length; i++) {
+                Element element = document.createElement("field");
+                element.setAttribute("name", "column" + (i + 1));
+                element.appendChild(document.createTextNode(data[i]));
+                rootElement.appendChild(element);
+            }
+
+            FileWriter writer = new FileWriter(xmlFile);
+            writer.write(toString(document));
+            writer.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String toString(Document document) {
+        // Convertir el documento XML a una cadena
+        return "";
+    }
+}

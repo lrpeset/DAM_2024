@@ -1,0 +1,119 @@
+package app;
+
+import java.io.*;
+import java.nio.file.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+public class CsvProcessor {
+
+	private Connection connection;
+
+	private String getCsvFilePath() {
+	    return getClass().getClassLoader().getResource("resources.csv/AE02_population.csv").getPath();
+	}
+
+	public CsvProcessor(Connection connection) {
+		this.connection = connection;
+	}
+
+	public String processCsv(String csvFilePath) throws Exception {
+		List<String[]> rows = readCsv(csvFilePath);
+		String[] header = rows.get(0);
+		rows.remove(0);
+
+		createPopulationTable(header);
+
+		String concatenatedXml = generateXmlFiles(rows);
+
+		insertDataToDatabase(rows);
+
+		return concatenatedXml;
+	}
+
+	private List<String[]> readCsv(String filePath) throws IOException {
+		List<String[]> rows = new ArrayList<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				rows.add(line.split("\t"));
+			}
+		}
+		return rows;
+	}
+
+	private void createPopulationTable(String[] header) throws Exception {
+		try (Statement statement = connection.createStatement()) {
+			statement.executeUpdate("DROP TABLE IF EXISTS population");
+
+			StringBuilder sql = new StringBuilder("CREATE TABLE population (");
+			for (String column : header) {
+				sql.append(column).append(" VARCHAR(30), ");
+			}
+			sql.delete(sql.length() - 2, sql.length());
+			sql.append(")");
+			statement.executeUpdate(sql.toString());
+		}
+	}
+
+	private String generateXmlFiles(List<String[]> rows) throws Exception {
+		Path xmlDir = Paths.get("xml");
+		Files.createDirectories(xmlDir);
+
+		StringBuilder concatenatedXml = new StringBuilder();
+
+		for (String[] row : rows) {
+			String country = row[0];
+			File xmlFile = xmlDir.resolve(country + ".xml").toFile();
+
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.newDocument();
+
+			Element rootElement = doc.createElement("row");
+			doc.appendChild(rootElement);
+
+			for (int i = 0; i < row.length; i++) {
+				Element element = doc.createElement("field" + i);
+				element.appendChild(doc.createTextNode(row[i]));
+				rootElement.appendChild(element);
+			}
+
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			Transformer transformer = transformerFactory.newTransformer();
+			DOMSource source = new DOMSource(doc);
+			StreamResult result = new StreamResult(xmlFile);
+			transformer.transform(source, result);
+
+			concatenatedXml.append(new String(Files.readAllBytes(xmlFile.toPath()))).append("\n");
+		}
+
+		return concatenatedXml.toString();
+	}
+
+	private void insertDataToDatabase(List<String[]> rows) throws Exception {
+		String sql = "INSERT INTO population VALUES (" + "?,".repeat(rows.get(0).length - 1) + "?)";
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+			for (String[] row : rows) {
+				for (int i = 0; i < row.length; i++) {
+					preparedStatement.setString(i + 1, row[i].trim());
+				}
+				preparedStatement.executeUpdate();
+			}
+		}
+	}
+}

@@ -1,0 +1,88 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class AdminView extends JFrame {
+    private final JButton importCsvButton;
+    private final JButton registerUserButton;
+    private JButton sqlQueryButton;
+    private JButton exportCsvButton;
+    private final JLabel messageLabel;
+
+    public AdminView() {
+        setTitle("Panel de Administrador");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        importCsvButton = new JButton("Importar CSV");
+        registerUserButton = new JButton("Registrar Usuario");
+        sqlQueryButton = new JButton("Hacer Consulta SQL");
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(importCsvButton);
+        buttonPanel.add(registerUserButton);
+        buttonPanel.add(sqlQueryButton);
+
+        add(buttonPanel, BorderLayout.NORTH);
+
+        messageLabel = new JLabel(" ");
+        add(messageLabel, BorderLayout.SOUTH);
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterButton() {
+        return registerUserButton;
+    }
+
+    public JButton getSqlQueryButton() {
+        return sqlQueryButton;
+    }
+
+    public void showMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    public void displayQueryResults(List<String[]> results) {
+        if (results.isEmpty()) {
+            showMessage("No se encontraron resultados.");
+            return;
+        }
+
+        String[] headers = results.get(0);
+        String[][] data = results.subList(1, results.size()).toArray(new String[0][]);
+
+        JTable resultTable = new JTable(data, headers);
+        JScrollPane scrollPane = new JScrollPane(resultTable);
+
+        JFrame resultFrame = new JFrame("Resultados de la Consulta");
+        resultFrame.setSize(800, 600);
+        resultFrame.setLayout(new BorderLayout());
+
+        JPanel buttonPanel = new JPanel();
+        JButton backButton = new JButton("Atrás");
+        JButton exportButton = new JButton("Exportar CSV");
+
+        // Mostrar los botones en el panel
+        buttonPanel.add(backButton);
+        buttonPanel.add(exportButton);
+        
+        resultFrame.add(scrollPane, BorderLayout.CENTER);
+        resultFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        resultFrame.setLocationRelativeTo(null);
+        resultFrame.setVisible(true);
+
+        // Acciones para los botones
+        backButton.addActionListener(e -> resultFrame.dispose());
+        exportButton.addActionListener(e -> {
+            // Aquí se activa la acción de exportar a CSV
+            firePropertyChange("exportCsv", null, null);
+        });
+    }
+}

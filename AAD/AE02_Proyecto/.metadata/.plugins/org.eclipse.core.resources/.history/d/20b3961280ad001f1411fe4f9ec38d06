@@ -1,0 +1,53 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainAdminView extends JFrame {
+	private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton importCsvButton;
+    private JButton registerUserButton;
+    private JLabel messageLabel;
+
+    public MainAdminView() {
+        setTitle("Admin View");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        usernameField = new JTextField();
+        passwordField = new JPasswordField();
+        importCsvButton = new JButton("Import CSV");
+        registerUserButton = new JButton("Register User");
+        messageLabel = new JLabel();
+
+        panel.add(importCsvButton);
+        panel.add(registerUserButton);
+
+        add(panel);
+    }
+
+    public String getUsernameField() {
+        return usernameField.getText();
+    }
+
+    public String getPasswordField() {
+        return new String(passwordField.getPassword());
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterUserButton() {
+        return registerUserButton;
+    }
+
+    public void showMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    public void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}

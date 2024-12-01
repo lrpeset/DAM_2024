@@ -1,0 +1,11 @@
+/**
+ * 
+ */
+/**
+ * 
+ */
+module Actividad_AE02 {
+	requires java.desktop;
+	requires java.sql;
+	requires java.security.sasl;
+}

@@ -1,0 +1,73 @@
+package model;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CsvProcessor {
+    private Connection connection;
+
+    public CsvProcessor(Connection connection) {
+        this.connection = connection;
+    }
+
+    public List<String[]> readCsv(String filePath) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            boolean firstLine = true;
+            while ((line = reader.readLine()) != null) {
+            	
+            	if (firstLine ) {
+            		firstLine = false;
+            		continue;
+            	}
+            	
+                String[] row = line.split("\t"); 
+                rows.add(row);
+            }
+        }
+        return rows;
+    }
+
+    public void createPopulationTable(String[] header) {
+        String dropTableQuery = "DROP TABLE IF EXISTS population";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(dropTableQuery);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        String createTableQuery = "CREATE TABLE population (" +
+                "country VARCHAR(30), " +
+                "population VARCHAR(30), " +
+                "density VARCHAR(30), " +
+                "area VARCHAR(30), " +
+                "fertility VARCHAR(30), " +
+                "age VARCHAR(30), " +
+                "urban VARCHAR(30), " +
+                "share VARCHAR(30))";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(createTableQuery);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void insertRowToDatabase(String[] row) {
+        String insertQuery = "INSERT INTO population (country, population, density, area, fertility, age, urban, share) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (var stmt = connection.prepareStatement(insertQuery)) {
+            for (int i = 0; i < row.length; i++) {
+                stmt.setString(i + 1, row[i]);
+            }
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

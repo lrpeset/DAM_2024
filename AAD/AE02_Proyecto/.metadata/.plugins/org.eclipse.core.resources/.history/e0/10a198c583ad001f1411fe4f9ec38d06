@@ -1,0 +1,16 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainUserView extends JFrame {
+    public MainUserView() {
+        setTitle("Usuario");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JLabel welcomeLabel = new JLabel("Bienvenido al flujo de usuario", SwingConstants.CENTER);
+        add(welcomeLabel, BorderLayout.CENTER);
+    }
+}

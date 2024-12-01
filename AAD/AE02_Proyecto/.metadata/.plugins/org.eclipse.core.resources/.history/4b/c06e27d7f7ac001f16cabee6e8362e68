@@ -1,0 +1,59 @@
+package model;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+public class XmlProcessor {
+
+    public void generateXmlFile(String country, String xmlContent) {
+        try {
+            File dir = new File("xml");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            FileWriter writer = new FileWriter(new File(dir, country + ".xml"));
+            writer.write(xmlContent);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String[] parseXmlContent(File xmlFile) throws Exception {
+        String[] row = new String[8];
+        
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(xmlFile);
+        
+        NodeList country = doc.getElementsByTagName("country");
+        NodeList population = doc.getElementsByTagName("population");
+        NodeList density = doc.getElementsByTagName("density");
+        NodeList area = doc.getElementsByTagName("area");
+        NodeList fertility = doc.getElementsByTagName("fertility");
+        NodeList age = doc.getElementsByTagName("age");
+        NodeList urban = doc.getElementsByTagName("urban");
+        NodeList share = doc.getElementsByTagName("share");
+        
+        row[0] = country.item(0).getTextContent();
+        row[1] = population.item(0).getTextContent();
+        row[2] = density.item(0).getTextContent();
+        row[3] = area.item(0).getTextContent();
+        row[4] = fertility.item(0).getTextContent();
+        row[5] = age.item(0).getTextContent();
+        row[6] = urban.item(0).getTextContent();
+        row[7] = share.item(0).getTextContent();
+        
+        return row;
+    }
+
+    public File getXmlDirectory() {
+        return new File("xml");
+    }
+}

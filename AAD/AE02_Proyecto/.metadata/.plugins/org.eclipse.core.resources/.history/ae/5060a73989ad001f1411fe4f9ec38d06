@@ -1,0 +1,24 @@
+package app;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+public class PasswordUtils {
+
+    // Convierte una contraseña a MD5
+    public static String convertToMD5(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes());  // Se actualiza el mensaje con los bytes de la contraseña
+            byte[] bytes = md.digest();  // Se obtiene el hash de la contraseña
+            StringBuilder sb = new StringBuilder();
+            for (byte b : bytes) {
+                sb.append(String.format("%02x", b));  // Convierte cada byte a hexadecimal
+            }
+            return sb.toString();  // Devuelve el MD5 en formato hexadecimal
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;  // Si no se puede generar el MD5, devuelve null
+        }
+    }
+}

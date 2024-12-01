@@ -1,0 +1,20 @@
+package view;
+
+import java.util.Map;
+
+public class ClientView extends BaseView {
+
+    public ClientView() {
+        super("Panel de Cliente");
+
+
+        addButton(logoutButton);
+        addButton(loginButton);
+
+        setButtonVisibility(Map.of(
+            exportCsvButton, true,
+            logoutButton, true,
+            loginButton, false
+        ));
+    }
+}

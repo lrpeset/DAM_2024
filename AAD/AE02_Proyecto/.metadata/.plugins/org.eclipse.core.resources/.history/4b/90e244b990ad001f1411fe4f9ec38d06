@@ -1,0 +1,71 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.sql.Connection;
+import controller.RegisterController;
+
+public class RegisterView extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JPasswordField confirmPasswordField;
+    private JButton registerButton;
+    private JLabel messageLabel;
+
+    public RegisterView(Connection connection) {
+        setTitle("Registrar Nuevo Usuario");
+        setSize(300, 250);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new GridLayout(5, 1));
+
+        usernameField = new JTextField();
+        add(new JLabel("Usuario:"));
+        add(usernameField);
+
+        passwordField = new JPasswordField();
+        add(new JLabel("Contraseña:"));
+        add(passwordField);
+
+        confirmPasswordField = new JPasswordField();
+        add(new JLabel("Confirmar Contraseña:"));
+        add(confirmPasswordField);
+
+        registerButton = new JButton("Registrar");
+        add(registerButton);
+
+        messageLabel = new JLabel();
+        add(messageLabel);
+
+        // Acción del botón de registro
+        registerButton.addActionListener(e -> {
+            String username = getLogin();
+            String password = getPassword();
+            String confirmPassword = getConfirmPassword();
+            
+            // Llamar al controlador para registrar el usuario
+            RegisterController controller = new RegisterController(connection);
+            controller.registerUser(username, password, confirmPassword, this);
+        });
+    }
+
+    public String getLogin() {
+        return usernameField.getText();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public String getConfirmPassword() {
+        return new String(confirmPasswordField.getPassword());
+    }
+
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    public JButton getRegisterButton() {
+        return registerButton;
+    }
+}

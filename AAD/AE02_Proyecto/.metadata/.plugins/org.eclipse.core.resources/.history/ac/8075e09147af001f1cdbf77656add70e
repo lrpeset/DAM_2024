@@ -1,0 +1,182 @@
+package controller;
+
+import model.AdminActions;
+import model.DatabaseConnection;
+import model.User;
+import view.AdminView;
+
+import javax.swing.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class AdminController {
+    private final AdminView view;
+    private final AdminActions adminActions;
+    private final String currentUserLogin;
+    private List<String[]> currentQueryResults;
+
+    public AdminController(AdminView view, Connection connection, String currentUserLogin) {
+        this.view = view;
+        this.adminActions = new AdminActions(connection);
+        this.currentUserLogin = currentUserLogin;
+
+        this.view.getRegisterUserButton().addActionListener(e -> openRegisterUserFrame());
+        this.view.getImportCsvButton().addActionListener(e -> handleImportCsv());
+        this.view.getSqlQueryButton().addActionListener(e -> handleSqlQuery());
+        this.view.getExportCsvButton().addActionListener(e -> handleExportToCsv());
+        this.view.getLogoutButton().addActionListener(e -> handleLogout());
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    public void start() {
+        view.setVisible(true);
+    }
+    
+    private void openRegisterUserFrame() {
+        JFrame registerFrame = view.createRegisterUserFrame();
+
+        view.addRegisterUserListeners(registerFrame, userData -> {
+            String login = userData[0];
+            String password = userData[1];
+            String confirmPassword = userData[2];
+
+            if (!password.equals(confirmPassword)) {
+                view.showMessage("Las contraseñas no coinciden.");
+                return false;
+            }
+
+            try {
+                boolean success = adminActions.registerUser(new User(login, password));
+                if (success) {
+                    view.showMessage("Usuario registrado exitosamente.");
+                    return true;
+                } else {
+                    view.showMessage("Error al registrar usuario.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                view.showMessage("Error: " + e.getMessage());
+            }
+            return false;
+        });
+
+        registerFrame.setVisible(true);
+    }
+
+    private void handleImportCsv() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Seleccionar archivo CSV");
+
+        int result = fileChooser.showOpenDialog(view);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                boolean success = adminActions.importCsv(filePath);
+                if (success) {
+                    view.showMessage("Archivo CSV importado exitosamente.");
+                } else {
+                    view.showMessage("Error al importar el archivo CSV.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                view.showMessage("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void handleExportToCsv() {
+        if (currentQueryResults == null || currentQueryResults.isEmpty()) {
+            view.showMessage("No hay datos para exportar.");
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar archivo CSV");
+        int result = fileChooser.showSaveDialog(view);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                if (!filePath.endsWith(".csv")) {
+                    filePath += ".csv";
+                }
+
+                boolean success = adminActions.exportCsv(filePath, currentQueryResults);
+                if (success) {
+                    view.showMessage("Archivo CSV exportado exitosamente.");
+                } else {
+                    view.showMessage("Error al exportar el archivo CSV.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                view.showMessage("Error: " + e.getMessage());
+            }
+        }
+    }
+
+
+    private void handleSqlQuery() {
+        String sqlQuery = JOptionPane.showInputDialog(view, "Introduce tu consulta SQL:");
+        if (sqlQuery == null || sqlQuery.trim().isEmpty()) {
+            view.showMessage("La consulta no puede estar vacía.");
+            return;
+        }
+
+        try {
+            List<String[]> results = adminActions.executeSelectQuery(sqlQuery, "admin");
+            if (results.isEmpty()) {
+                view.showMessage("La consulta no devolvió resultados.");
+            } else {
+                currentQueryResults = results;
+                view.displayQueryResults(results);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al ejecutar la consulta: " + ex.getMessage());
+        }
+    }
+
+    private void handleLogin() {
+        try {
+            adminActions.setConnection(DatabaseConnection.getConnection());
+            view.toggleLoginLogout(true);
+            view.showMessage("Conexión establecida con éxito.");
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al conectar a la base de datos: " + ex.getMessage());
+        }
+    }
+
+    private void handleLogout() {
+        try {
+            adminActions.closeConnection();
+            view.toggleLoginLogout(false);
+            view.showMessage("Sesión cerrada exitosamente.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al cerrar la sesión: " + ex.getMessage());
+        }
+    }
+
+    private List<Map<String, Object>> convertResultsToMap(List<String[]> results) {
+        List<Map<String, Object>> mappedResults = new ArrayList<>();
+        if (results.isEmpty()) {
+            return mappedResults;
+        }
+
+        String[] headers = results.get(0);
+        for (int i = 1; i < results.size(); i++) {
+            String[] row = results.get(i);
+            Map<String, Object> rowMap = new HashMap<>();
+            for (int j = 0; j < headers.length; j++) {
+                rowMap.put(headers[j], row[j]);
+            }
+            mappedResults.add(rowMap);
+        }
+        return mappedResults;
+    }
+}

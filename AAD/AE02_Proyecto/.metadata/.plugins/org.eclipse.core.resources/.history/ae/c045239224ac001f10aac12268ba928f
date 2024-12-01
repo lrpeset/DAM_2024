@@ -1,0 +1,33 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+public class DatabaseManager {
+	private static final String URL = "jdbc:mysql://localhost:3306/population";
+	private static final String DB_ADMIN = "admin";
+	private static final String DB_PASSWORD = "21232f297a57a5a743894a0e4a801fc3";
+
+	public Connection connect(String user, String password) throws Exception {
+		return DriverManager.getConnection(URL, user, password);
+	}
+
+	public User authenticate(String login, String passwordHash) {
+		try (Connection conn = connect(DB_ADMIN, DB_PASSWORD)) {
+			String query = "SELECT * FROM users WHERE login = ? AND password = ?";
+			PreparedStatement stmt = conn.prepareStatement(query);
+			stmt.setString(1, login);
+			stmt.setString(2, passwordHash);
+
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				return new User(rs.getString("login"), rs.getString("password"), rs.getString("type"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+}

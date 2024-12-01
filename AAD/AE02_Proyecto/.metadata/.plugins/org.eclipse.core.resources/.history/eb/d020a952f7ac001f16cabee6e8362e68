@@ -1,0 +1,77 @@
+package model;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CsvProcessor {
+    private Connection connection;
+
+    public CsvProcessor(Connection connection) {
+        this.connection = connection;
+    }
+
+    public List<String[]> readCsv(String filePath) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(";");
+                rows.add(values);
+            }
+        }
+        return rows;
+    }
+
+    public void createPopulationTable() {
+        String createTableSQL = "CREATE TABLE IF NOT EXISTS population (" +
+                                "country VARCHAR(30), " +
+                                "population VARCHAR(30), " +
+                                "density VARCHAR(30), " +
+                                "area VARCHAR(30), " +
+                                "fertility VARCHAR(30), " +
+                                "age VARCHAR(30), " +
+                                "urban VARCHAR(30), " +
+                                "share VARCHAR(30))";
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(createTableSQL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void insertRowToDatabase(String[] row) {
+        String insertSQL = "INSERT INTO population (country, population, density, area, fertility, age, urban, share) " +
+                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
+            for (int i = 0; i < 8; i++) {
+                pstmt.setString(i + 1, row[i]);
+            }
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Genera el contenido XML de una fila
+    public String generateXmlContent(String[] row) {
+        String xmlContent = "<person>";
+        xmlContent += "<country>" + row[0] + "</country>";
+        xmlContent += "<population>" + row[1] + "</population>";
+        xmlContent += "<density>" + row[2] + "</density>";
+        xmlContent += "<area>" + row[3] + "</area>";
+        xmlContent += "<fertility>" + row[4] + "</fertility>";
+        xmlContent += "<age>" + row[5] + "</age>";
+        xmlContent += "<urban>" + row[6] + "</urban>";
+        xmlContent += "<share>" + row[7] + "</share>";
+        xmlContent += "</person>";
+        return xmlContent;
+    }
+}

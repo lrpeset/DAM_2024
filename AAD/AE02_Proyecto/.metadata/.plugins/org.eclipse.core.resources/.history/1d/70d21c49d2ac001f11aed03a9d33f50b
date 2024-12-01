@@ -1,0 +1,30 @@
+package controller;
+
+import view.MainView;
+import view.RegisterView;
+import model.RegisterModel;
+import java.sql.Connection;
+
+public class MainController {
+	private MainView mainView;
+	private Connection connection;
+
+	public MainController(MainView mainView, Connection connection) {
+		this.mainView = mainView;
+		this.connection = connection;
+
+		mainView.getRegisterButton().addActionListener(e -> openRegisterView());
+	}
+
+	private void openRegisterView() {
+		RegisterView registerView = new RegisterView();
+
+		RegisterModel registerModel = new RegisterModel(connection);
+
+		RegisterController registerController = new RegisterController(registerView, connection); // Cambié
+																									// RegisterModel por
+																									// connection
+
+		registerView.setVisible(true);
+	}
+}

@@ -1,0 +1,25 @@
+package model;
+
+public class PopulationRecord {
+    private String country;
+    private String population;
+    private String year;
+
+    public PopulationRecord(String country, String population, String year) {
+        this.country = country;
+        this.population = population;
+        this.year = year;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public String getPopulation() {
+        return population;
+    }
+
+    public String getYear() {
+        return year;
+    }
+}

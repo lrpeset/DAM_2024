@@ -1,0 +1,44 @@
+package model;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.sql.SQLException;
+
+public class XmlProcessor {
+	public File getOrCreateXmlDirectory() {
+		File xmlFolder = new File("resources.xml");
+		if (!xmlFolder.exists()) {
+			xmlFolder.mkdirs();
+		}
+		return xmlFolder;
+	}
+
+	public String generateXmlContent(String[] row) {
+		return """
+				<entry>
+				    <country>%s</country>
+				    <population>%s</population>
+				    <density>%s</density>
+				    <area>%s</area>
+				    <fertility>%s</fertility>
+				    <age>%s</age>
+				    <urban>%s</urban>
+				    <share>%s</share>
+				</entry>
+				""".formatted((Object[]) row);
+	}
+
+	public void generateXmlFile(String country, String xmlContent) throws IOException {
+		File xmlFolder = getOrCreateXmlDirectory();
+		File xmlFile = new File(xmlFolder, country + ".xml");
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(xmlFile))) {
+			writer.write(xmlContent);
+		}
+	}
+
+	public String[] parseXmlContent(File xmlFile) throws IOException {
+		String content = Files.readString(xmlFile.toPath(), StandardCharsets.UTF_8);
+		return content.replaceAll("<[^>]+>", "").trim().split("\n");
+	}
+}

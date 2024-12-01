@@ -1,0 +1,58 @@
+package controller;
+
+import model.LoginModel;
+import view.LoginView;
+import view.MainAdminView;
+import view.MainUserView;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+
+public class LoginController {
+    private LoginView loginView;
+    private LoginModel loginModel;
+
+    public LoginController(LoginView loginView, LoginModel loginModel) {
+        this.loginView = loginView;
+        this.loginModel = loginModel;
+
+        this.loginView.getLoginButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                handleLogin();
+            }
+        });
+    }
+
+    private void handleLogin() {
+        String username = loginView.getUsername();
+        String password = loginView.getPassword();
+
+        // Hash de la contraseña con MD5 antes de enviarla para la comparación
+        String passwordHash = LoginModel.hashPassword(password);
+
+        // Autenticación con la contraseña hash
+        if (loginModel.authenticate(username, passwordHash)) {
+            String userType = loginModel.getUserType(username);
+
+            if ("admin".equals(userType)) {
+                loginView.dispose();
+                MainAdminView adminView = new MainAdminView();
+                // Pasamos la conexión al constructor de MainAdminController
+                new MainAdminController(adminView, loginView.getConnection());
+                adminView.setVisible(true);  // Aseguramos que la vista del admin se muestre
+            } else {
+                loginView.dispose();
+                MainUserView userView = new MainUserView();
+                new MainUserController(userView, loginView.getConnection());
+                userView.setVisible(true);
+            }
+        } else {
+            loginView.showErrorMessage("Credenciales incorrectas");
+        }
+    }
+
+    public void start() {
+        loginView.setVisible(true);
+    }
+}

@@ -1,0 +1,69 @@
+package controller;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import view.LoginView;
+import view.AdminView;
+import view.UserView;
+
+public class LoginController {
+    private Connection connection;
+    private LoginView view;
+
+    public LoginController(Connection connection, LoginView view) {
+        this.connection = connection;
+        this.view = view;
+
+        // Añadimos el listener al botón de login
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    private void handleLogin() {
+        String username = view.getUsername();
+        String password = view.getPassword();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            view.setMessage("Por favor, completa todos los campos.");
+            return;
+        }
+
+        // Validamos el usuario contra la base de datos
+        String userType = validateUser(username, password);
+        if (userType != null) {
+            view.setMessage("Inicio de sesión exitoso.");
+
+            // Dependiendo del tipo de usuario, mostramos la vista correspondiente
+            if (userType.equals("admin")) {
+                AdminController adminController = new AdminController(new AdminView(), connection);
+                adminController.start(); // Mostrar vista de Admin
+            } else if (userType.equals("user")) {
+                UserController userController = new UserController(new UserView(), connection);
+                userController.start(); // Mostrar vista de User
+            }
+
+            // Cerrar la ventana de login
+            view.dispose();
+        } else {
+            view.setMessage("Usuario o contraseña incorrectos.");
+        }
+    }
+
+    private String validateUser(String username, String password) {
+        String query = "SELECT type FROM users WHERE login = ? AND password = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, password); // Asegúrate de que esta comparación sea con una contraseña segura
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("type");  // Retorna el tipo de usuario si las credenciales son correctas
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null; // Si no existe el usuario o la contraseña no es correcta
+    }
+}

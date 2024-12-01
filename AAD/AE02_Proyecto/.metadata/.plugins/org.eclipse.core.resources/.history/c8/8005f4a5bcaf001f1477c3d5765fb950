@@ -1,0 +1,33 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import utils.Authentication;
+
+public class UserActions {
+    private Connection connection;
+
+    public UserActions(Connection connection) {
+        this.connection = connection;
+    }
+
+
+    public boolean validateCredentials(String username, String password) {
+        String hashedPassword = Authentication.hashPassword(password); 
+
+        String query = "SELECT * FROM users WHERE login = ? AND password = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, hashedPassword);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+}

@@ -1,0 +1,45 @@
+package view;
+
+import javax.swing.*;
+import java.util.Map;
+
+public class AdminView extends BaseView {
+    private final JButton importCsvButton;
+    private final JButton registerUserButton;
+    private final JButton sqlQueryButton;
+
+    public AdminView() {
+        super("Panel de Administrador");
+
+        importCsvButton = new JButton("Importar CSV");
+        registerUserButton = new JButton("Registrar Usuario");
+        sqlQueryButton = new JButton("Hacer Consulta SQL");
+
+        addButton(importCsvButton);
+        addButton(registerUserButton);
+        addButton(sqlQueryButton);
+        addButton(logoutButton);
+        addButton(loginButton);
+
+        setButtonVisibility(Map.of(
+            importCsvButton, true,
+            registerUserButton, true,
+            sqlQueryButton, true,
+            exportCsvButton, true,
+            logoutButton, true,
+            loginButton, false
+        ));
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterButton() {
+        return registerUserButton;
+    }
+
+    public JButton getSqlQueryButton() {
+        return sqlQueryButton;
+    }
+}

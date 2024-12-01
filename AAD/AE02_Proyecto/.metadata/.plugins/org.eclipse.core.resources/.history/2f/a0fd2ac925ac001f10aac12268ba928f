@@ -1,0 +1,39 @@
+package model;
+
+import org.w3c.dom.*;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
+import java.util.List;
+
+public class XmlManager {
+	public void createXml(PopulationRecord record, String filePath) throws Exception {
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		Document doc = dBuilder.newDocument();
+
+		Element root = doc.createElement("PopulationRecord");
+		doc.appendChild(root);
+
+		Element country = doc.createElement("Country");
+		country.appendChild(doc.createTextNode(record.getCountry()));
+		root.appendChild(country);
+
+		Element population = doc.createElement("Population");
+		population.appendChild(doc.createTextNode(record.getPopulation()));
+		root.appendChild(population);
+
+		Element year = doc.createElement("Year");
+		year.appendChild(doc.createTextNode(record.getYear()));
+		root.appendChild(year);
+
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer = transformerFactory.newTransformer();
+		DOMSource source = new DOMSource(doc);
+		StreamResult result = new StreamResult(new File(filePath));
+
+		transformer.transform(source, result);
+	}
+}

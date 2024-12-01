@@ -1,0 +1,59 @@
+package controller;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import app.PasswordUtils;
+import model.RegisterModel;
+import view.RegisterView;
+
+public class RegisterController {
+
+	private RegisterView registerView;
+	private RegisterModel registerModel;
+	private Connection connection;
+
+	public RegisterController(RegisterView registerView, Connection connection) {
+		this.registerView = registerView;
+		this.registerModel = new RegisterModel(connection);
+		this.connection = connection;
+		this.registerView.getRegisterButton().addActionListener(e -> handleRegister());
+	}
+
+	private void handleRegister() {
+		String login = registerView.getLogin();
+		String password = registerView.getPassword();
+		String confirmPassword = registerView.getConfirmPassword();
+
+		if (login.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+			registerView.setMessage("Por favor, completa todos los campos.");
+			return;
+		}
+
+		if (!password.equals(confirmPassword)) {
+			registerView.setMessage("Las contraseñas no coinciden.");
+			return;
+		}
+
+		String passwordHash = PasswordUtils.convertToMD5(password);
+
+		try {
+			String sql = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+			try (PreparedStatement statement = connection.prepareStatement(sql)) {
+				statement.setString(1, login);
+				statement.setString(2, passwordHash);
+				statement.setString(3, "user");
+
+				int rowsInserted = statement.executeUpdate();
+				if (rowsInserted > 0) {
+					registerView.setMessage("¡Registro exitoso!");
+				} else {
+					registerView.setMessage("Hubo un problema al registrar el usuario.");
+				}
+			}
+		} catch (SQLException e) {
+			registerView.setMessage("Error al registrar el usuario: " + e.getMessage());
+		}
+	}
+}

@@ -1,0 +1,39 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import utils.AuthenticationUtils;  // Importamos AuthenticationUtils
+
+public class AdminActions {
+    private Connection connection;
+
+    public AdminActions(Connection connection) {
+        this.connection = connection;
+    }
+
+    /**
+     * Registra un nuevo usuario en la base de datos.
+     * 
+     * @param user Objeto User que contiene los datos del nuevo usuario
+     * @return true si el registro es exitoso; de lo contrario, false.
+     */
+    public boolean registerUser(User user) {
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, AuthenticationUtils.hashPassword(user.getHashedPassword()));  // Usamos el método estático aquí
+            stmt.setString(3, user.getUserType());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void importData(List<String[]> data) {
+        // Implementar lógica de importación de datos según las necesidades
+    }
+}
+

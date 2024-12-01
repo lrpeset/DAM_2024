@@ -1,0 +1,121 @@
+package controller;
+
+import model.AdminActions;
+import model.User;
+import view.AdminView;
+
+import javax.swing.*;
+import java.sql.Connection;
+import java.util.List;
+
+public class AdminController {
+    private final AdminView view;
+    private final AdminActions adminActions;
+    private final String currentUserLogin;
+    private List<String[]> currentQueryResults;
+
+    public AdminController(AdminView view, Connection connection, String currentUserLogin) {
+        this.view = view;
+        this.adminActions = new AdminActions(connection);
+        this.currentUserLogin = currentUserLogin;
+
+        // Asignar acciones a los botones
+        this.view.getRegisterUserButton().addActionListener(e -> openRegisterUserFrame());
+        this.view.getImportCsvButton().addActionListener(e -> handleImportCsv());
+        this.view.getSqlQueryButton().addActionListener(e -> handleSqlQuery());
+        this.view.getExportCsvButton().addActionListener(e -> handleExportToCsv());
+        this.view.getLogoutButton().addActionListener(e -> handleLogout());
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    public void start() {
+        view.setVisible(true);
+    }
+
+    // Método para abrir el registro de usuario
+    private void openRegisterUserFrame() {
+        String username = JOptionPane.showInputDialog(view, "Introduce el nombre de usuario:");
+        String password = JOptionPane.showInputDialog(view, "Introduce la contraseña:");
+        String userType = JOptionPane.showInputDialog(view, "Introduce el tipo de usuario (admin/client):");
+
+        if (username == null || password == null || userType == null) {
+            view.showMessage("Registro cancelado.");
+            return;
+        }
+
+        User newUser = new User(username, password, userType);
+        boolean success = adminActions.registerUser(new User(currentUserLogin, "", "admin"), newUser);
+
+        if (success) {
+            view.showMessage("Usuario registrado con éxito.");
+        } else {
+            view.showMessage("Error al registrar el usuario.");
+        }
+    }
+
+    // Método para manejar la importación de CSV
+    private void handleImportCsv() {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(view);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+            try {
+                String xmlContent = adminActions.processCsvAndGenerateXml(filePath);
+                view.showMessage("Archivo CSV procesado y XML generado correctamente.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                view.showMessage("Error al procesar el archivo CSV.");
+            }
+        }
+    }
+
+    // Método para manejar consultas SQL
+    private void handleSqlQuery() {
+        String query = JOptionPane.showInputDialog(view, "Introduce la consulta SQL:");
+        if (query == null || query.isEmpty()) {
+            view.showMessage("Consulta cancelada.");
+            return;
+        }
+
+        try {
+            List<String[]> results = adminActions.executeSelectQuery(query, "admin");
+            currentQueryResults = results;
+            view.showMessage("Consulta ejecutada con éxito.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            view.showMessage("Error al ejecutar la consulta.");
+        }
+    }
+
+    // Método para manejar la exportación a CSV
+    private void handleExportToCsv() {
+        if (currentQueryResults == null || currentQueryResults.isEmpty()) {
+            view.showMessage("No hay resultados para exportar.");
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showSaveDialog(view);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+            try {
+                adminActions.exportToCsv(currentQueryResults, filePath);
+                view.showMessage("Datos exportados a CSV correctamente.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                view.showMessage("Error al exportar los datos.");
+            }
+        }
+    }
+
+    // Método para manejar el cierre de sesión
+    private void handleLogout() {
+        view.showMessage("Cerrando sesión...");
+        view.dispose();
+    }
+
+    // Método para manejar el inicio de sesión
+    private void handleLogin() {
+        view.showMessage("Función de inicio de sesión no implementada.");
+    }
+}

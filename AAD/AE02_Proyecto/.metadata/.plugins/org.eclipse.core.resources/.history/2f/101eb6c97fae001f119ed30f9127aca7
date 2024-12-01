@@ -1,0 +1,172 @@
+package controller;
+
+import utils.CsvProcessor;
+import utils.HashPassword;
+import utils.XmlProcessor;
+import view.AdminView;
+import model.User;
+import model.AdminActions;
+
+import javax.swing.*;
+
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.io.File;
+import java.sql.Connection;
+import java.util.List;
+
+public class AdminController {
+	private AdminView view;
+	private CsvProcessor csvProcessor;
+	private XmlProcessor xmlProcessor;
+	private AdminActions adminActions;
+	private String currentUserLogin;
+
+	public AdminController(AdminView view, Connection connection, String currentUserLogin) {
+		this.view = view;
+		this.csvProcessor = new CsvProcessor(connection);
+		this.xmlProcessor = new XmlProcessor();
+		this.adminActions = new AdminActions(connection);
+		this.currentUserLogin = currentUserLogin;
+
+		this.view.getRegisterButton().addActionListener(e -> openRegisterUserFrame());
+		this.view.getImportCsvButton().addActionListener(e -> handleImportCsv());
+	}
+
+	public void start() {
+		view.setVisible(true);
+	}
+
+	private void openRegisterUserFrame() {
+		JFrame registerFrame = new JFrame("Registrar Nuevo Usuario");
+		registerFrame.setSize(400, 300);
+		registerFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		registerFrame.setLayout(new BorderLayout());
+
+		JPanel inputPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+		JTextField loginField = new JTextField();
+		JPasswordField passwordField = new JPasswordField();
+		JPasswordField confirmPasswordField = new JPasswordField();
+
+		inputPanel.add(new JLabel("Nuevo Usuario:"));
+		inputPanel.add(loginField);
+		inputPanel.add(new JLabel("Contraseña:"));
+		inputPanel.add(passwordField);
+		inputPanel.add(new JLabel("Confirmar Contraseña:"));
+		inputPanel.add(confirmPasswordField);
+
+		registerFrame.add(inputPanel, BorderLayout.CENTER);
+
+		JPanel buttonPanel = new JPanel();
+		JButton confirmButton = new JButton("Confirmar");
+		JButton backButton = new JButton("Atrás");
+
+		buttonPanel.add(confirmButton);
+		buttonPanel.add(backButton);
+		registerFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+		confirmButton.addActionListener(e -> {
+			String login = loginField.getText().trim();
+			String password = new String(passwordField.getPassword()).trim();
+			String confirmPassword = new String(confirmPasswordField.getPassword()).trim();
+
+			if (login.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+				JOptionPane.showMessageDialog(registerFrame, "Por favor, completa todos los campos.");
+				return;
+			}
+
+			if (!password.equals(confirmPassword)) {
+				JOptionPane.showMessageDialog(registerFrame, "Las contraseñas no coinciden.");
+				return;
+			}
+
+			if (!"admin".equals(currentUserLogin)) {
+				JOptionPane.showMessageDialog(registerFrame, "No tienes permisos para registrar un usuario.");
+				return;
+			}
+
+			User adminUser = new User(currentUserLogin, "", "admin");
+			User newUser = new User(login, HashPassword.hash(password), "client");
+
+			boolean success = adminActions.registerUser(adminUser, newUser);
+			if (success) {
+				JOptionPane.showMessageDialog(registerFrame, "Usuario registrado con éxito.");
+				registerFrame.dispose();
+			} else {
+				JOptionPane.showMessageDialog(registerFrame, "Error al registrar el usuario.");
+			}
+		});
+
+		backButton.addActionListener(e -> registerFrame.dispose());
+
+		registerFrame.setLocationRelativeTo(null);
+		registerFrame.setVisible(true);
+	}
+
+	private void handleImportCsv() {
+		if (!"admin".equals(currentUserLogin)) {
+			view.setMessage("Solo los administradores pueden importar CSV.");
+			return;
+		}
+
+		try {
+			processCsvAndGenerateXml();
+			displayXmlContents();
+			view.setMessage("Archivo CSV importado y XMLs generados exitosamente.");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			view.setMessage("Error al importar CSV: " + ex.getMessage());
+		}
+	}
+
+	private void processCsvAndGenerateXml() throws Exception {
+        String csvFilePath = "csv/AE02_population.csv";
+        List<String[]> rows = csvProcessor.readCsv(csvFilePath);
+
+        for (String[] row : rows) {
+            String xml = xmlProcessor.generateXmlContent(row);
+            String country = row[0];
+            xmlProcessor.generateXmlFile(country, xml);
+            }
+        }
+
+	private void displayXmlContents() throws Exception {
+		File dir = xmlProcessor.getXmlDirectory();
+
+		if (dir.exists() && dir.isDirectory()) {
+			File[] xmlFiles = dir.listFiles((d, name) -> name.endsWith(".xml"));
+			if (xmlFiles == null || xmlFiles.length == 0) {
+				JOptionPane.showMessageDialog(null, "No se encontraron archivos XML.");
+				return;
+			}
+
+			StringBuilder contenido = new StringBuilder();
+			for (File xmlFile : xmlFiles) {
+				String[] row = xmlProcessor.parseXmlContent(xmlFile);
+				contenido.append(String.join(", ", row)).append("\n");
+			}
+
+			showXmlContentFrame(contenido.toString());
+		} else {
+			JOptionPane.showMessageDialog(null, "El directorio XML no existe.");
+		}
+	}
+
+	private void showXmlContentFrame(String contenido) {
+		JFrame frame = new JFrame("Contenido XML");
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setSize(600, 400);
+
+		// Crear un JTextArea para mostrar el contenido
+		JTextArea textArea = new JTextArea(contenido);
+		textArea.setEditable(false);
+
+		// Agregar JScrollPane para desplazamiento
+		JScrollPane scrollPane = new JScrollPane(textArea);
+		frame.add(scrollPane, BorderLayout.CENTER);
+
+		// Centrar la ventana y hacerla visible
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+	}
+}

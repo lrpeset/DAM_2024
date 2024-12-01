@@ -1,0 +1,36 @@
+package app;
+
+import app.DBConnection;
+import view.LoginView;
+
+import javax.swing.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class Main {
+
+    public static void main(String[] args) {
+        // Establecer la conexión a la base de datos
+        try {
+            Connection connection = DBConnection.getConnection();
+            if (connection != null) {
+                System.out.println("Conexión a la base de datos exitosa.");
+            } else {
+                System.out.println("Fallo en la conexión a la base de datos.");
+                return;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return; // Si no se puede conectar, salir del programa
+        }
+
+        // Llamar a la vista de Login
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                LoginView loginView = new LoginView();
+                loginView.setVisible(true);
+            }
+        });
+    }
+}

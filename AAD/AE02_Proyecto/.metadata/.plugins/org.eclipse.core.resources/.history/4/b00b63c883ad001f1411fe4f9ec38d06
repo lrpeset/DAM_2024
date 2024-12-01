@@ -1,0 +1,28 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class RegisterModel {
+    private Connection connection;
+
+    public RegisterModel(Connection connection) {
+        this.connection = connection;
+    }
+
+    public boolean registerUser(String username, String password, String type) {
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.setString(3, type);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+}

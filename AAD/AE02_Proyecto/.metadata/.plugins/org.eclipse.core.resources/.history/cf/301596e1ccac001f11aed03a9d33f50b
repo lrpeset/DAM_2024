@@ -1,0 +1,49 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+
+import model.RegisterModel;
+import view.RegisterView;
+
+public class RegisterController {
+	private RegisterView view;
+	private RegisterModel model;
+	private Connection connection;
+
+	public RegisterController(RegisterView view, Connection connection) {
+		this.view = view;
+		this.connection = connection;
+		this.model = new RegisterModel(connection);
+
+		this.view.getRegisterButton().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				handleRegisterUser();
+			}
+		});
+	}
+
+	private void handleRegisterUser() {
+		String username = view.getUsername();
+		String password = new String(view.getPassword());
+		String confirmPassword = new String(view.getConfirmPassword());
+
+		if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+			view.setMessage("Por favor, completa todos los campos.");
+			return;
+		}
+
+		if (!password.equals(confirmPassword)) {
+			view.setMessage("Las contraseñas no coinciden.");
+			return;
+		}
+
+		if (model.registerNewUser(username, password)) {
+			view.setMessage("Usuario registrado exitosamente.");
+		} else {
+			view.setMessage("Error al registrar el usuario.");
+		}
+	}
+}

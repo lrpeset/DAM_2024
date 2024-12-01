@@ -1,0 +1,51 @@
+//package view;
+//
+//import javax.swing.*;
+//import java.awt.*;
+//import java.sql.Connection; // Asegúrate de importar la clase Connection si no lo has hecho
+//
+//public class MainView extends JFrame {
+//    private JButton registerButton;
+//    private JButton importCsvButton;
+//    private Connection connection;
+//
+//    public MainView(Connection connection) {
+//        this.connection = connection;
+//        setTitle("Vista Principal");
+//        setSize(400, 300);
+//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        setLocationRelativeTo(null);
+//
+//        JPanel panel = new JPanel();
+//        panel.setLayout(new FlowLayout());
+//
+//        registerButton = new JButton("Registrar Usuario");
+//        importCsvButton = new JButton("Importar CSV");
+//
+//        panel.add(registerButton);
+//        panel.add(importCsvButton);
+//
+//        add(panel);
+//
+//        registerButton.setVisible(true); // Cambiar si no es admin
+//        importCsvButton.setVisible(true); // Cambiar si no es admin
+//
+//        registerButton.addActionListener(e -> {
+//            RegisterView registerView = new RegisterView(connection);
+//            registerView.setVisible(true);
+//        });
+//    }
+//
+//    public void showAdminButtons() {
+//        registerButton.setVisible(true);
+//        importCsvButton.setVisible(true);
+//    }
+//
+//    public JButton getRegisterButton() {
+//        return registerButton;
+//    }
+//
+//    public JButton getImportCsvButton() {
+//        return importCsvButton;
+//    }
+//}

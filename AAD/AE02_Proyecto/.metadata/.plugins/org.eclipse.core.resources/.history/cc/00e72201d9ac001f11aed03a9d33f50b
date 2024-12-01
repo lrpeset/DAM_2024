@@ -1,0 +1,25 @@
+package view;
+
+import javax.swing.*;
+
+public class MainView extends JFrame {
+	private JButton registerButton;
+
+	public MainView() {
+		setTitle("Vista Principal");
+		setSize(400, 300);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
+
+		registerButton = new JButton("Registrar Usuario");
+
+		JPanel panel = new JPanel();
+		panel.add(registerButton);
+		add(panel);
+	}
+
+	public JButton getRegisterButton() {
+		return registerButton;
+	}
+
+}

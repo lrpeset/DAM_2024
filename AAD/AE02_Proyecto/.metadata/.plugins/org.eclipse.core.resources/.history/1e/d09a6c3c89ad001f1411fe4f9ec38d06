@@ -1,0 +1,21 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class UserView extends JFrame {
+    public UserView() {
+        setTitle("User Dashboard");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+
+        JLabel welcomeLabel = new JLabel("Bienvenido al Panel de Usuario");
+        panel.add(welcomeLabel);
+
+        add(panel);
+    }
+}

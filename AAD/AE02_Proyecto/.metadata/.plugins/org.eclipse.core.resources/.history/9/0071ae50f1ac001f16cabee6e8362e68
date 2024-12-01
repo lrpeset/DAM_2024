@@ -1,0 +1,72 @@
+package model;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class XmlProcessor {
+
+    public String generateXmlContent(String[] row) {
+        String country = row[0];
+        String population = row[1]; 
+        String density = row[2];
+        String area = row[3];
+        String fertility = row[4];
+        String age = row[5];
+        String urban = row[6];
+        String share = row[7];
+
+        return "<country>\n" +
+               "<name>" + country + "</name>\n" +
+               "<population>" + population + "</population>\n" +
+               "<density>" + density + "</density>\n" +
+               "<area>" + area + "</area>\n" +
+               "<fertility>" + fertility + "</fertility>\n" +
+               "<age>" + age + "</age>\n" +
+               "<urban>" + urban + "</urban>\n" +
+               "<share>" + share + "</share>\n" +
+               "</country>";
+    }
+
+    public void generateXmlFile(String country, String xmlContent) throws IOException {
+        File xmlDir = new File("resources.xml");
+        if (!xmlDir.exists()) {
+            xmlDir.mkdir(); 
+        }
+        File xmlFile = new File(xmlDir, country + ".xml");
+        try (FileWriter writer = new FileWriter(xmlFile)) {
+            writer.write(xmlContent);
+        }
+    }
+
+    public File getOrCreateXmlDirectory() {
+        File xmlDir = new File("resources.xml");
+        if (!xmlDir.exists()) {
+            xmlDir.mkdir();
+        }
+        return xmlDir;
+    }
+
+    public String[] parseXmlContent(File xmlFile) throws Exception {
+        String[] row = new String[8];
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(xmlFile);
+        doc.getDocumentElement().normalize();
+
+        row[0] = doc.getElementsByTagName("name").item(0).getTextContent();
+        row[1] = doc.getElementsByTagName("population").item(0).getTextContent();
+        row[2] = doc.getElementsByTagName("density").item(0).getTextContent();
+        row[3] = doc.getElementsByTagName("area").item(0).getTextContent();
+        row[4] = doc.getElementsByTagName("fertility").item(0).getTextContent();
+        row[5] = doc.getElementsByTagName("age").item(0).getTextContent();
+        row[6] = doc.getElementsByTagName("urban").item(0).getTextContent();
+        row[7] = doc.getElementsByTagName("share").item(0).getTextContent();
+
+        return row;
+    }
+}

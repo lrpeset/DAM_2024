@@ -1,0 +1,46 @@
+package model;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class LoginModel {
+	private Connection connection;
+
+	public LoginModel(Connection connection) {
+		this.connection = connection;
+	}
+
+	public boolean validateUser(String username, String password) {
+		String hashedPassword = hashPassword(password);
+
+		String query = "SELECT * FROM users WHERE login = ? AND password = ?";
+		try (PreparedStatement stmt = connection.prepareStatement(query)) {
+			stmt.setString(1, username);
+			stmt.setString(2, hashedPassword);
+			try (ResultSet rs = stmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public String hashPassword(String password) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] hashBytes = md.digest(password.getBytes());
+			StringBuilder sb = new StringBuilder();
+			for (byte b : hashBytes) {
+				sb.append(String.format("%02x", b));
+			}
+			return sb.toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException("Error al calcular hash MD5", e);
+		}
+	}
+}

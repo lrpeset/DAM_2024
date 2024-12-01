@@ -1,0 +1,24 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import view.MainView;
+
+public class MainController {
+	private MainView view;
+
+	public MainController(MainView view) {
+		this.view = view;
+
+		this.view.getRegisterButton().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				handleRegister();
+			}
+		});
+	}
+
+	private void handleRegister() {
+		System.out.println("Registrar nuevo usuario...");
+	}
+}

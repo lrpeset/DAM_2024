@@ -1,0 +1,66 @@
+package model;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class LoginModel {
+    private Connection connection;
+
+    public LoginModel(Connection connection) {
+        this.connection = connection;
+    }
+
+    public boolean authenticate(String username, String passwordHash) {
+        return checkCredentials(username, passwordHash);
+    }
+
+    private boolean checkCredentials(String username, String passwordHash) {
+        String query = "SELECT * FROM users WHERE login = ? AND password = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, passwordHash);
+            ResultSet resultSet = stmt.executeQuery();
+
+            // Verifica si existe al menos un registro con las credenciales correctas
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public String getUserType(String username) {
+        String query = "SELECT type FROM users WHERE login = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            ResultSet resultSet = stmt.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getString("type");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes());
+            byte[] bytes = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : bytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+}

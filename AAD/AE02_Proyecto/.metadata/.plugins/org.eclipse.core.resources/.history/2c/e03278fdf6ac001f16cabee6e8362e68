@@ -1,0 +1,175 @@
+package model;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+public class CsvProcessor {
+    private Connection connection;
+
+    public CsvProcessor(Connection connection) {
+        this.connection = connection;
+    }
+
+    public List<String[]> readCsv(String filePath) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            boolean firstLine = true;
+            
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    continue;
+                }
+                String[] values = line.split(";");
+                
+                if (values.length < 8) {
+                    System.out.println("Fila con datos incompletos: " + line);
+                    continue;
+                }
+                
+                rows.add(values);
+            }
+        }
+        return rows;
+    }
+
+    public void createPopulationTable() {
+        String dropTableSQL = "DROP TABLE IF EXISTS Population";
+        String createTableSQL = "CREATE TABLE Population (" +
+                                "country VARCHAR(30), " +
+                                "population VARCHAR(30), " +
+                                "density VARCHAR(30), " +
+                                "area VARCHAR(30), " +
+                                "fertility VARCHAR(30), " +
+                                "age VARCHAR(30), " +
+                                "urban VARCHAR(30), " +
+                                "share VARCHAR(30))";
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(dropTableSQL);
+            stmt.executeUpdate(createTableSQL);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void insertRowToDatabase(String[] row) {
+        String insertSQL = "INSERT INTO Population (country, population, density, area, fertility, age, urban, share) " +
+                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
+            pstmt.setString(1, row[0]);
+            pstmt.setString(2, row[1]);
+            pstmt.setString(3, row[2]);
+            pstmt.setString(4, row[3]);
+            pstmt.setString(5, row[4]);
+            pstmt.setString(6, row[5]);
+            pstmt.setString(7, row[6]);
+            pstmt.setString(8, row[7]);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void createXmlFiles(List<String[]> rows) throws IOException {
+        File xmlDir = new File("xml");
+        if (!xmlDir.exists()) {
+            xmlDir.mkdir(); 
+        }
+
+        StringBuilder concatenatedXmlContent = new StringBuilder();
+        for (String[] row : rows) {
+            if (row.length >= 8) {
+                String xmlContent = generateXmlContent(row);
+                String countryName = row[0].replaceAll("\\s+", "_");
+                File xmlFile = new File(xmlDir, countryName + ".xml");
+                try (FileWriter writer = new FileWriter(xmlFile)) {
+                    writer.write(xmlContent);
+                    concatenatedXmlContent.append(xmlContent);
+                }
+            }
+        }
+
+        showXmlContentInTextArea(concatenatedXmlContent.toString());
+    }
+
+    public String generateXmlContent(String[] row) {
+        String xmlContent = "<person>";
+        xmlContent += "<country>" + row[0] + "</country>";
+        xmlContent += "<population>" + row[1] + "</population>";
+        xmlContent += "<density>" + row[2] + "</density>";
+        xmlContent += "<area>" + row[3] + "</area>";
+        xmlContent += "<fertility>" + row[4] + "</fertility>";
+        xmlContent += "<age>" + row[5] + "</age>";
+        xmlContent += "<urban>" + row[6] + "</urban>";
+        xmlContent += "<share>" + row[7] + "</share>";
+        xmlContent += "</person>";
+        return xmlContent;
+    }
+
+    public void showXmlContentInTextArea(String xmlContent) {
+        JTextArea textArea = new JTextArea(20, 50);
+        textArea.setText(xmlContent);
+        JOptionPane.showMessageDialog(null, new JScrollPane(textArea), "Contenido XML", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void processCsv(String filePath) throws IOException {
+        List<String[]> rows = readCsv(filePath);
+
+        createPopulationTable();
+        
+        createXmlFiles(rows);
+
+        JOptionPane.showMessageDialog(null, "CSV importado");
+        
+        File xmlDir = new File("xml");
+        if (xmlDir.exists() && xmlDir.isDirectory()) {
+            File[] xmlFiles = xmlDir.listFiles((dir, name) -> name.endsWith(".xml"));
+            if (xmlFiles != null) {
+                for (File xmlFile : xmlFiles) {
+                    readXmlAndInsertIntoDatabase(xmlFile);
+                }
+            }
+        }
+    }
+
+    public void readXmlAndInsertIntoDatabase(File xmlFile) throws IOException {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(xmlFile);
+            doc.getDocumentElement().normalize();
+
+            Element personElement = (Element) doc.getElementsByTagName("person").item(0);
+            String country = personElement.getElementsByTagName("country").item(0).getTextContent();
+            String population = personElement.getElementsByTagName("population").item(0).getTextContent();
+            String density = personElement.getElementsByTagName("density").item(0).getTextContent();
+            String area = personElement.getElementsByTagName("area").item(0).getTextContent();
+            String fertility = personElement.getElementsByTagName("fertility").item(0).getTextContent();
+            String age = personElement.getElementsByTagName("age").item(0).getTextContent();
+            String urban = personElement.getElementsByTagName("urban").item(0).getTextContent();
+            String share = personElement.getElementsByTagName("share").item(0).getTextContent();
+
+            insertRowToDatabase(new String[] {country, population, density, area, fertility, age, urban, share});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

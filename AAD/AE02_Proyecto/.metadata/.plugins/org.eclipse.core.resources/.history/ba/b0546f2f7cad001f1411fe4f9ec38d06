@@ -1,0 +1,26 @@
+package controller;
+
+import view.MainAdminView;
+
+public class MainAdminController {
+    private MainAdminView adminView;
+
+    public MainAdminController(MainAdminView adminView) {
+        this.adminView = adminView;
+
+        this.adminView.getImportCsvButton().addActionListener(e -> handleImportCsv());
+        this.adminView.getRegisterUserButton().addActionListener(e -> handleRegisterUser());
+    }
+
+    private void handleImportCsv() {
+        // Aquí iría la lógica de importación
+    }
+
+    private void handleRegisterUser() {
+        // Aquí iría la lógica de registro
+    }
+
+    public void start() {
+        adminView.setVisible(true);
+    }
+}

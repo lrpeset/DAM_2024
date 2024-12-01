@@ -1,0 +1,21 @@
+package controller;
+
+import view.ClientView;
+
+import java.sql.Connection;
+
+public class ClientController extends BaseController {
+    public ClientController(ClientView view, Connection connection, String currentUserLogin) {
+        super(view, connection, currentUserLogin);
+
+        this.view.getSqlQueryButton().addActionListener(e -> handleSqlQuery());
+        this.view.getExportCsvButton().addActionListener(e -> handleExportToCsv());
+        this.view.getLogoutButton().addActionListener(e -> handleLogout());
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+    }
+
+    @Override
+    protected String getUserType() {
+        return "client";
+    }
+}

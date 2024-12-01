@@ -1,0 +1,46 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainView extends JFrame {
+
+    private JButton loadCSVButton;
+    private JButton processXMLButton;
+    private JTextArea textArea;
+
+    public MainView() {
+        setTitle("Administrar Datos");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        loadCSVButton = new JButton("Cargar CSV");
+        processXMLButton = new JButton("Procesar XML");
+        textArea = new JTextArea();
+        textArea.setEditable(false);
+
+        setLayout(new BorderLayout());
+        JPanel panel = new JPanel();
+        panel.add(loadCSVButton);
+        panel.add(processXMLButton);
+        add(panel, BorderLayout.NORTH);
+        add(new JScrollPane(textArea), BorderLayout.CENTER);
+    }
+
+    public JButton getLoadCSVButton() {
+        return loadCSVButton;
+    }
+
+    public JButton getProcessXMLButton() {
+        return processXMLButton;
+    }
+
+    public JTextArea getTextArea() {
+        return textArea;
+    }
+
+    public String getCSVFilePath() {
+        return "path/to/your/csvfile.csv";
+    }
+}

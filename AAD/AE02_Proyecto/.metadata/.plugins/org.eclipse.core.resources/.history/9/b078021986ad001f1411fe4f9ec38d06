@@ -1,0 +1,16 @@
+package view;
+
+import javax.swing.*;
+
+public class UserView extends JFrame {
+
+    public UserView() {
+        setTitle("Bienvenido Usuario");
+        setSize(400, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JLabel welcomeLabel = new JLabel("Bienvenido a la vista de usuario.", SwingConstants.CENTER);
+        add(welcomeLabel);
+    }
+}

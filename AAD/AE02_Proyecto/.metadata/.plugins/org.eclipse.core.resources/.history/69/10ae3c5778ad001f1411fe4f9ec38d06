@@ -1,0 +1,35 @@
+package app;
+
+import controller.LoginController;
+import model.LoginModel;
+import view.LoginView;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class Main {
+    public static void main(String[] args) {
+        Connection connection = null;
+
+        try {
+            connection = DBConnection.getConnection();
+
+            LoginModel loginModel = new LoginModel(connection);
+            LoginView loginView = new LoginView();
+            LoginController loginController = new LoginController(loginView, loginModel);
+
+            loginController.start();
+
+        } catch (SQLException e) {
+            System.err.println("Error al conectar con la base de datos: " + e.getMessage());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    System.err.println("Error al cerrar la conexión: " + e.getMessage());
+                }
+            }
+        }
+    }
+}

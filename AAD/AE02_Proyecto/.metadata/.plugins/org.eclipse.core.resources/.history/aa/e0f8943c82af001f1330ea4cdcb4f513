@@ -1,0 +1,131 @@
+package utils;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CsvProcessor {
+    private Connection connection;
+
+    public CsvProcessor(Connection connection) {
+        this.connection = connection;
+    }
+
+    public String processCsvAndGenerateXml(String filePath) throws Exception {
+        List<String[]> rows = readCsv(filePath);
+        StringBuilder xmlBuilder = new StringBuilder();
+
+        // Crear el XML
+        for (String[] row : rows) {
+            String xmlContent = generateXmlContent(row);
+            xmlBuilder.append(xmlContent);
+        }
+
+        // Aquí puedes también insertar las filas en la base de datos si es necesario
+        for (String[] row : rows) {
+            insertRowToDatabase(row);
+        }
+
+        return xmlBuilder.toString();  // Retorna el XML generado
+    }
+}
+    private List<String[]> readCsv(String filePath) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            boolean firstLine = true;
+
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    continue;
+                }
+
+                String[] values = line.split(";");
+
+                if (values.length < 8) {
+                    System.out.println("Fila con datos incompletos: " + line);
+                    continue;
+                }
+
+                rows.add(values);
+            }
+        }
+        return rows;
+    }
+
+    private void createPopulationTable() {
+        String createTableSQL = "CREATE TABLE IF NOT EXISTS population (" +
+                "country VARCHAR(30), " +
+                "population VARCHAR(30), " +
+                "density VARCHAR(30), " +
+                "area VARCHAR(30), " +
+                "fertility VARCHAR(30), " +
+                "age VARCHAR(30), " +
+                "urban VARCHAR(30), " +
+                "share VARCHAR(30))";
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(createTableSQL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void insertRowToDatabase(String[] row) {
+        String insertSQL = "INSERT INTO population (country, population, density, area, fertility, age, urban, share) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
+            for (int i = 0; i < 8; i++) {
+                pstmt.setString(i + 1, row[i]);
+            }
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String generateXmlContent(String[] row) {
+        if (row.length < 8) {
+            throw new IllegalArgumentException("Fila con datos incompletos: " + String.join(",", row));
+        }
+
+        String country = escapeXml(row[0]);
+        String population = escapeXml(row[1]);
+        String density = escapeXml(row[2]);
+        String area = escapeXml(row[3]);
+        String fertility = escapeXml(row[4]);
+        String age = escapeXml(row[5]);
+        String urban = escapeXml(row[6]);
+        String share = escapeXml(row[7]);
+
+        String xmlContent = "<populationData>";
+        xmlContent += "<country>" + country + "</country>";
+        xmlContent += "<population>" + population + "</population>";
+        xmlContent += "<density>" + density + "</density>";
+        xmlContent += "<area>" + area + "</area>";
+        xmlContent += "<fertility>" + fertility + "</fertility>";
+        xmlContent += "<age>" + age + "</age>";
+        xmlContent += "<urban>" + urban + "</urban>";
+        xmlContent += "<share>" + share + "</share>";
+        xmlContent += "</populationData>";
+
+        return xmlContent;
+    }
+
+    private String escapeXml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
+    }
+}

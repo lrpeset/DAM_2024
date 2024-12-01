@@ -1,0 +1,63 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import controller.RegisterController;
+import java.sql.Connection;
+
+public class RegisterView extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JPasswordField confirmPasswordField;
+    private JButton registerButton;
+    private JLabel messageLabel;
+
+    public RegisterView(Connection connection) {
+        setTitle("Registrar Nuevo Usuario");
+        setSize(300, 250);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new GridLayout(5, 1));
+
+        usernameField = new JTextField();
+        add(new JLabel("Usuario:"));
+        add(usernameField);
+
+        passwordField = new JPasswordField();
+        add(new JLabel("Contraseña:"));
+        add(passwordField);
+
+        confirmPasswordField = new JPasswordField();
+        add(new JLabel("Confirmar Contraseña:"));
+        add(confirmPasswordField);
+
+        registerButton = new JButton("Registrar");
+        add(registerButton);
+
+        messageLabel = new JLabel();
+        add(messageLabel);
+
+        new RegisterController(this, connection);
+    }
+
+    public String getLogin() {
+        return usernameField.getText();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public String getConfirmPassword() {
+        return new String(confirmPasswordField.getPassword());
+    }
+
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    public JButton getRegisterButton() {
+        return registerButton;
+    }
+}
+

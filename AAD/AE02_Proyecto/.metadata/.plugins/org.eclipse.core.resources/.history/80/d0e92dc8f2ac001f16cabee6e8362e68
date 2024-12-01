@@ -1,0 +1,39 @@
+package model;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
+public class XmlProcessor {
+
+    private static final String XML_DIRECTORY = "resources/xml/";
+
+    public XmlProcessor() {
+        // Asegura que el directorio XML exista
+        File dir = new File(XML_DIRECTORY);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    public void generateXmlFile(String fileName, String content) {
+        try (FileWriter writer = new FileWriter(XML_DIRECTORY + fileName + ".xml")) {
+            writer.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String[] parseXmlContent(File xmlFile) {
+        // Lógica para parsear el XML y devolver los datos relevantes en formato de array
+        // Aquí puedes usar una librería de parsing XML, como JAXB o similar
+        // Por ejemplo, simplemente devolvemos un array vacío para ilustrar
+        return new String[]{"parsed_data_1", "parsed_data_2", "parsed_data_3"};
+    }
+
+    public File getOrCreateXmlDirectory() {
+        return new File(XML_DIRECTORY);
+    }
+}
+

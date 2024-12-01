@@ -1,0 +1,78 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import model.RegisterModel;
+import view.RegisterView;
+import view.MainView;
+import app.DBConnection;
+
+public class RegisterController {
+	private RegisterModel model;
+	private RegisterView view;
+	private Connection connection;
+
+	public RegisterController(RegisterModel model, RegisterView view, Connection connection) {
+		this.model = model;
+		this.view = view;
+		this.connection = connection;
+
+		this.view.getRegisterButton().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				handleRegisterUser();
+			}
+		});
+	}
+
+	private void handleRegisterUser() {
+		String username = view.getUsername();
+		String password = view.getPassword();
+		String confirmPassword = view.getConfirmPassword();
+
+		if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+			view.setMessage("Por favor, completa todos los campos.");
+			return;
+		}
+
+		if (!password.equals(confirmPassword)) {
+			view.setMessage("Las contraseñas no coinciden.");
+			return;
+		}
+
+		String hashedPassword = Utils.getMD5Hash(password);
+
+		if (registerNewUser(username, hashedPassword)) {
+			view.setMessage("Usuario registrado con éxito.");
+		} else {
+			view.setMessage("Error al registrar el usuario.");
+		}
+	}
+
+	private boolean registerNewUser(String username, String hashedPassword) {
+		String createUserSQL = "CREATE USER ?@'localhost' IDENTIFIED BY ?";
+		String grantPermissionsSQL = "GRANT SELECT ON population.population TO ?@'localhost'";
+
+		try {
+			try (PreparedStatement stmt = connection.prepareStatement(createUserSQL)) {
+				stmt.setString(1, username);
+				stmt.setString(2, hashedPassword);
+				stmt.executeUpdate();
+			}
+
+			try (PreparedStatement stmt = connection.prepareStatement(grantPermissionsSQL)) {
+				stmt.setString(1, username);
+				stmt.executeUpdate();
+			}
+
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+}

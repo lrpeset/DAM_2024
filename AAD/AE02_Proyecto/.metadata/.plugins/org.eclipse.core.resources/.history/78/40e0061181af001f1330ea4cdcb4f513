@@ -1,0 +1,74 @@
+package utils;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+
+public class DatabaseOperations {
+
+    public static boolean registerUser(Connection connection, User adminUser, User newUser) {
+        try {
+            String query = "INSERT INTO users (login, password, role) VALUES (?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, newUser.getLogin());
+            statement.setString(2, newUser.getPassword());
+            statement.setString(3, newUser.getRole());
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static List<String[]> executeSelectQuery(Connection connection, String query, String userType) throws SQLException {
+        List<String[]> results = new ArrayList<>();
+        PreparedStatement statement = connection.prepareStatement(query);
+        ResultSet resultSet = statement.executeQuery();
+
+        int columnCount = resultSet.getMetaData().getColumnCount();
+        while (resultSet.next()) {
+            String[] row = new String[columnCount];
+            for (int i = 0; i < columnCount; i++) {
+                row[i] = resultSet.getString(i + 1);
+            }
+            results.add(row);
+        }
+
+        return results;
+    }
+
+    public static List<Map<String, Object>> convertResultsToMap(List<String[]> results) {
+        List<Map<String, Object>> mappedResults = new ArrayList<>();
+        for (String[] row : results) {
+            Map<String, Object> map = new HashMap<>();
+            for (int i = 0; i < row.length; i++) {
+                map.put("Column " + (i + 1), row[i]);
+            }
+            mappedResults.add(map);
+        }
+        return mappedResults;
+    }
+
+    public static void exportToCsv(List<Map<String, Object>> queryResults, String filePath) throws Exception {
+        StringBuilder csvBuilder = new StringBuilder();
+
+        // Escribe las cabeceras
+        if (!queryResults.isEmpty()) {
+            queryResults.get(0).keySet().forEach(key -> csvBuilder.append(key).append(","));
+            csvBuilder.setLength(csvBuilder.length() - 1); // Elimina la última coma
+            csvBuilder.append("\n");
+        }
+
+        // Escribe los datos
+        for (Map<String, Object> row : queryResults) {
+            row.values().forEach(value -> csvBuilder.append(value).append(","));
+            csvBuilder.setLength(csvBuilder.length() - 1); // Elimina la última coma
+            csvBuilder.append("\n");
+        }
+
+        // Escribe al archivo
+        java.nio.file.Files.write(java.nio.file.Path.of(filePath), csvBuilder.toString().getBytes());
+    }
+}

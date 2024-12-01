@@ -1,0 +1,16 @@
+import model.LoginModel;
+import view.LoginView;
+import controller.LoginController;
+
+import java.sql.Connection;
+
+public class Main {
+    public static void main(String[] args) {
+        Connection connection = DatabaseConnector.getConnection();
+        LoginModel loginModel = new LoginModel(connection);
+        LoginView loginView = new LoginView();
+
+        LoginController loginController = new LoginController(loginView, loginModel);
+        loginView.setVisible(true);
+    }
+}

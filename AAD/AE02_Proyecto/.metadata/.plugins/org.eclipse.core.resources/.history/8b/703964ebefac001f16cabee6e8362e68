@@ -1,0 +1,37 @@
+package view;
+
+import javax.swing.*;
+
+public class MainView extends JFrame {
+	private JButton registerButton;
+	private JButton importCsvButton;
+
+	public MainView() {
+		setTitle("Vista Principal");
+		setSize(400, 300);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
+
+		registerButton = new JButton("Registrar Usuario");
+
+		JPanel panel = new JPanel();
+		panel.add(registerButton);
+		add(panel);
+
+		importCsvButton =  new JButton("Importar CSV");
+		
+		JPanel panel2 = new JPanel();
+		panel2.add(importCsvButton);
+		add(importCsvButton);
+	}
+
+	public JButton getRegisterButton() {
+		return registerButton;
+	}
+
+	public JButton getImportCsvButton() {
+		return importCsvButton;
+	}
+
+}
+//Hay que solucionar los botones

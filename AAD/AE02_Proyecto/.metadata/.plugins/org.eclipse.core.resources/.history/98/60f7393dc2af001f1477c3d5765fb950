@@ -1,0 +1,147 @@
+package view;
+
+import javax.swing.*;
+
+import model.AdminActions;
+import model.User;
+
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.util.Map;
+import java.util.function.Function;
+
+public class AdminView extends BaseView {
+
+    private final JButton importCsvButton;
+    private final JButton registerUserButton;
+    private final String currentUserLogin;
+    AdminActions adminActions = new AdminActions(null);
+    boolean success = adminActions.registerUser(null, null);
+
+    public AdminView() {    	
+        super("Panel de Administrador");
+        
+        importCsvButton = new JButton("Importar CSV");
+        registerUserButton = new JButton("Registrar Usuario");
+
+        addButton(importCsvButton);
+        addButton(registerUserButton);
+        addButton(logoutButton);
+        addButton(loginButton);
+
+        setButtonVisibility(Map.of(
+            importCsvButton, true,
+            registerUserButton, true,
+            exportCsvButton, true,
+            logoutButton, true,
+            loginButton, false
+        ));
+
+    }
+    
+    private void openRegisterUserFrame() {
+        if (!"admin".equals(currentUserLogin)) {
+            this.showMessage("No tienes permisos para registrar usuarios.");
+            return;
+        }
+
+        JFrame registerFrame = this.createRegisterUserFrame();
+        this.addRegisterUserListeners(registerFrame, userData -> {
+            boolean isValid = validateUserData(userData);
+            if (!isValid) return false;
+
+            User adminUser = new User(currentUserLogin, "", "admin");
+            User newUser = new User(userData[0], userData[1], "client");
+
+            boolean success = adminActions.registerUser(adminUser, newUser);
+            this.showMessage(success ? "Usuario registrado con éxito." : "Error al registrar usuario.");
+            return success;
+        });
+
+        registerFrame.setVisible(true);
+    }
+    
+    public JFrame createRegisterUserFrame() {
+        JFrame registerFrame = new JFrame("Registrar Usuario");
+        registerFrame.setSize(400, 300);
+        registerFrame.setLayout(new BorderLayout());
+        registerFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        JPanel inputPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel loginLabel = new JLabel("Nombre de usuario:");
+        JTextField loginField = new JTextField();
+        JLabel passwordLabel = new JLabel("Contraseña:");
+        JPasswordField passwordField = new JPasswordField();
+        JLabel confirmPasswordLabel = new JLabel("Confirmar contraseña:");
+        JPasswordField confirmPasswordField = new JPasswordField();
+
+        inputPanel.add(loginLabel);
+        inputPanel.add(loginField);
+        inputPanel.add(passwordLabel);
+        inputPanel.add(passwordField);
+        inputPanel.add(confirmPasswordLabel);
+        inputPanel.add(confirmPasswordField);
+
+        JButton registerButton = new JButton("Registrar");
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(registerButton);
+
+        registerFrame.add(inputPanel, BorderLayout.CENTER);
+        registerFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        registerButton.addActionListener(e -> {
+            String login = loginField.getText();
+            String password = new String(passwordField.getPassword());
+            String confirmPassword = new String(confirmPasswordField.getPassword());
+            
+            String[] userData = {login, password, confirmPassword};
+            
+            Function<String[], Boolean> registerUserCallback = getRegisterUserCallback();
+            if (registerUserCallback != null) {
+                boolean success = registerUserCallback.apply(userData);
+                if (success) {
+                    registerFrame.dispose();
+                }
+            }
+        });
+
+        return registerFrame;
+    }
+    
+    private boolean validateUserData(String[] userData) {
+        String login = userData[0];
+        String password = userData[1];
+        String confirmPassword = userData[2];
+
+        if (login.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            this.showMessage("Por favor, completa todos los campos.");
+            return false;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            this.showMessage("Las contraseñas no coinciden.");
+            return false;
+        }
+
+        return true;
+    }
+
+
+    public Function<String[], Boolean> getRegisterUserCallback() {
+        return null;
+    }
+
+    public void addRegisterUserListeners(JFrame frame, Function<String[], Boolean> callback) {
+        getRegisterUserCallback();
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterButton() {
+        return registerUserButton;
+    }
+}

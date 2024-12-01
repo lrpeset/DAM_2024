@@ -1,0 +1,34 @@
+package app;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import controller.LoginController;
+import controller.MainController;
+import model.LoginModel;
+import view.LoginView;
+import view.MainView;
+
+public class Main {
+
+	public static void main(String[] args) {
+		try {
+			Connection connection = DBConnection.getConnection();
+			System.out.println("Conexión exitosa con la base de datos.");
+
+			LoginView loginView = new LoginView();
+			LoginModel loginModel = new LoginModel(connection);
+			LoginController loginController = new LoginController(loginModel, loginView);
+			loginView.setVisible(true);
+
+			loginController.onLoginSuccess(() -> {
+				MainView mainView = new MainView(connection);
+				MainController mainController = new MainController(mainView, connection);
+				mainView.setVisible(true);
+			});
+
+		} catch (SQLException e) {
+			System.err.println("Error al conectar con la base de datos:");
+			e.printStackTrace();
+		}
+	}
+}

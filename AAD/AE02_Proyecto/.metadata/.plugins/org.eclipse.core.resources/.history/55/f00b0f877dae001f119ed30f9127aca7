@@ -1,0 +1,88 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class AdminView extends JFrame {
+    private JTextArea xmlTextArea;
+    private JButton importCsvButton;
+    private JButton registerUserButton;
+    private JLabel messageLabel;
+    
+    // Campos para registrar un nuevo usuario
+    private JTextField newUserLoginField;
+    private JPasswordField newUserPasswordField;
+    private JPasswordField newUserConfirmPasswordField;
+
+    public AdminView() {
+        setTitle("Panel de Administrador");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        xmlTextArea = new JTextArea();
+        xmlTextArea.setEditable(false);
+        add(new JScrollPane(xmlTextArea), BorderLayout.CENTER);
+
+        // Panel de botones
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
+        importCsvButton = new JButton("Importar CSV");
+        registerUserButton = new JButton("Registrar Usuario");
+        buttonPanel.add(importCsvButton);
+        buttonPanel.add(registerUserButton);
+        add(buttonPanel, BorderLayout.NORTH);
+
+        messageLabel = new JLabel(" ");
+        add(messageLabel, BorderLayout.SOUTH);
+
+        // Panel para registrar usuario
+        JPanel registerPanel = new JPanel();
+        registerPanel.setLayout(new GridLayout(4, 2));
+
+        registerPanel.add(new JLabel("Nuevo Usuario:"));
+        newUserLoginField = new JTextField();
+        registerPanel.add(newUserLoginField);
+
+        registerPanel.add(new JLabel("Contraseña:"));
+        newUserPasswordField = new JPasswordField();
+        registerPanel.add(newUserPasswordField);
+
+        registerPanel.add(new JLabel("Confirmar Contraseña:"));
+        newUserConfirmPasswordField = new JPasswordField();
+        registerPanel.add(newUserConfirmPasswordField);
+
+        add(registerPanel, BorderLayout.CENTER);
+    }
+
+    // Métodos getter para obtener los valores de los campos
+    public String getNewUserLogin() {
+        return newUserLoginField.getText().trim();
+    }
+
+    public String getNewUserPassword() {
+        return new String(newUserPasswordField.getPassword()).trim();
+    }
+
+    public String getNewUserConfirmPassword() {
+        return new String(newUserConfirmPasswordField.getPassword()).trim();
+    }
+
+    // Métodos getter para los botones
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterButton() {
+        return registerUserButton;
+    }
+
+    // Métodos para establecer mensajes y contenido
+    public void setXmlContent(String content) {
+        xmlTextArea.setText(content);
+    }
+
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+}

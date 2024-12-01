@@ -1,0 +1,57 @@
+package controller;
+
+import model.RegisterModel;
+import view.RegisterView;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+import app.Utils;
+
+public class RegisterController {
+
+	private RegisterView registerView;
+	private RegisterModel registerModel;
+
+	public RegisterController(RegisterView registerView, Connection connection) {
+		this.registerView = registerView;
+		this.registerModel = new RegisterModel(connection);
+
+		this.registerView.getRegisterButton().addActionListener(e -> handleRegister());
+	}
+
+	private void handleRegister() {
+		String login = registerView.getLogin();
+		String password = registerView.getPassword();
+		String confirmPassword = registerView.getConfirmPassword();
+
+		if (login.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+			registerView.setMessage("Por favor, completa todos los campos.");
+			return;
+		}
+
+		if (!password.equals(confirmPassword)) {
+			registerView.setMessage("Las contraseñas no coinciden.");
+			return;
+		}
+
+		String passwordHash = Utils.hashPassword(password);
+
+		try {
+			String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+			try (PreparedStatement statement = connection.prepareStatement(sql)) {
+				statement.setString(1, login);
+				statement.setString(2, password);
+
+				int rowsInserted = statement.executeUpdate();
+				if (rowsInserted > 0) {
+					registerView.setMessage("¡Registro exitoso!");
+				} else {
+					registerView.setMessage("Hubo un problema al registrar el usuario.");
+				}
+			}
+		} catch (SQLException e) {
+			registerView.setMessage("Error al registrar el usuario: " + e.getMessage());
+		}
+	}
+}

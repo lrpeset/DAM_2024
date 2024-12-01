@@ -1,0 +1,34 @@
+package view;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class XMLViewer {
+
+    private JTextArea textArea;
+
+    public XMLViewer(JTextArea textArea) {
+        this.textArea = textArea;
+    }
+
+    public void displayXMLContent() {
+        File folder = new File("xml");
+        File[] files = folder.listFiles((dir, name) -> name.endsWith(".xml"));
+
+        if (files != null) {
+            StringBuilder allContent = new StringBuilder();
+            for (File file : files) {
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    byte[] data = new byte[(int) file.length()];
+                    fis.read(data);
+                    allContent.append(new String(data)).append("\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            textArea.setText(allContent.toString());
+        }
+    }
+}

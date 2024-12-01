@@ -1,0 +1,42 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class LoginView extends JFrame {
+	private JTextField usernameField;
+	private JPasswordField passwordField;
+	private JButton loginButton;
+
+	public LoginView() {
+		setTitle("Login");
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setSize(300, 150);
+		setLayout(new GridLayout(3, 2));
+
+		add(new JLabel("Username:"));
+		usernameField = new JTextField();
+		add(usernameField);
+
+		add(new JLabel("Password:"));
+		passwordField = new JPasswordField();
+		add(passwordField);
+
+		loginButton = new JButton("Login");
+		add(loginButton);
+
+		setLocationRelativeTo(null);
+	}
+
+	public JTextField getUsernameField() {
+		return usernameField;
+	}
+
+	public JPasswordField getPasswordField() {
+		return passwordField;
+	}
+
+	public JButton getLoginButton() {
+		return loginButton;
+	}
+}

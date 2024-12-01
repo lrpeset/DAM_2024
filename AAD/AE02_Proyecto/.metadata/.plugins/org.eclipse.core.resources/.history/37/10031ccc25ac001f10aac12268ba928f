@@ -1,0 +1,19 @@
+package controller;
+
+import view.QueryResultView;
+
+public class QueryController {
+	private QueryResultView view;
+
+	public QueryController(QueryResultView view) {
+		this.view = view;
+	}
+
+	public void init() {
+		view.getExportCsvButton().addActionListener(e -> exportCsv());
+		view.setVisible(true);
+	}
+
+	private void exportCsv() {
+	}
+}

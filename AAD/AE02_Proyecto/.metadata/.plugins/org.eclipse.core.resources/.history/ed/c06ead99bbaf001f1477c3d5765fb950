@@ -1,0 +1,109 @@
+package controller;
+
+import model.AdminActions;
+import model.DatabaseConnection;
+import view.AdminView;
+
+import javax.swing.*;
+import java.sql.Connection;
+import java.util.List;
+
+public class ClientController {
+    private final AdminView view;
+    private final AdminActions adminActions;
+    private final String currentUserLogin;
+    private List<String[]> currentQueryResults;
+
+    public ClientController(AdminView view, Connection connection, String currentUserLogin) {
+        this.view = view;
+        this.adminActions = new AdminActions(connection);
+        this.currentUserLogin = currentUserLogin;
+
+        // Solo añadir los botones que son accesibles para el cliente
+        this.view.getSqlQueryButton().addActionListener(e -> handleSqlQuery());
+        this.view.getExportCsvButton().addActionListener(e -> handleExportToCsv());
+        this.view.getLogoutButton().addActionListener(e -> handleLogout());
+        this.view.getLoginButton().addActionListener(e -> handleLogin());
+
+        // Deshabilitar botones no permitidos para clientes
+        this.view.getRegisterButton().setEnabled(false);
+        this.view.getImportCsvButton().setEnabled(false);
+    }
+
+    public void start() {
+        view.setVisible(true);
+    }
+
+    private void handleSqlQuery() {
+        String sqlQuery = JOptionPane.showInputDialog(view, "Introduce tu consulta SQL:");
+
+        if (sqlQuery == null || sqlQuery.trim().isEmpty()) {
+            view.showMessage("La consulta no puede estar vacía.");
+            return;
+        }
+
+        try {
+            // Validación para asegurar que solo consulta la tabla `population`
+            if (!sqlQuery.toLowerCase().contains("from population")) {
+                view.showMessage("Solo puedes consultar la tabla 'population'.");
+                return;
+            }
+
+            List<String[]> results = adminActions.executeSelectQuery(sqlQuery, "client");
+            if (results.isEmpty()) {
+                view.showMessage("La consulta no devolvió resultados.");
+            } else {
+                currentQueryResults = results;
+                view.displayQueryResults(results);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al ejecutar la consulta: " + ex.getMessage());
+        }
+    }
+
+    private void handleExportToCsv() {
+        if (currentQueryResults == null || currentQueryResults.isEmpty()) {
+            view.showMessage("No hay resultados para exportar.");
+            return;
+        }
+
+        try {
+            List<Map<String, Object>> mappedResults = adminActions.convertResultsToMap(currentQueryResults);
+
+            String directoryPath = "csv";
+            String csvFileName = "resultado_consulta.csv";
+            String csvFilePath = directoryPath + File.separator + csvFileName;
+
+            adminActions.exportToCsv(mappedResults, csvFilePath);
+            view.showMessage("Datos exportados a: " + csvFilePath);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al exportar datos: " + ex.getMessage());
+        }
+    }
+
+    private void handleLogin() {
+        try {
+            Connection connection = DatabaseConnection.getConnection();
+            adminActions.setConnection(connection);
+
+            view.toggleLoginLogout(true);
+            view.showMessage("Conexión establecida con éxito.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al conectar a la base de datos: " + ex.getMessage());
+        }
+    }
+
+    private void handleLogout() {
+        try {
+            adminActions.closeConnection();
+            view.toggleLoginLogout(false);
+            view.showMessage("Sesión cerrada exitosamente.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            view.showMessage("Error al cerrar la sesión: " + ex.getMessage());
+        }
+    }
+}

@@ -1,0 +1,89 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import view.RegisterView;
+
+public class RegisterController {
+    private RegisterView registerView;
+    private Connection connection;
+
+    public RegisterController(RegisterView registerView, Connection connection) {
+        this.registerView = registerView;
+        this.connection = connection;
+
+        this.registerView.getRegisterButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                handleRegisterUser();
+            }
+        });
+    }
+
+    private void handleRegisterUser() {
+        String username = registerView.getUsername();
+        String password = registerView.getPassword();
+        String confirmPassword = registerView.getConfirmPassword();
+
+        if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            registerView.setMessage("Por favor, completa todos los campos.");
+            return;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            registerView.setMessage("Las contraseñas no coinciden.");
+            return;
+        }
+
+        String hashedPassword = hashPassword(password);
+        try {
+            registerNewUser(username, hashedPassword);
+            registerView.setMessage("Usuario registrado exitosamente.");
+            registerView.dispose();
+        } catch (SQLException e) {
+            registerView.setMessage("Error al registrar el usuario: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void registerNewUser(String username, String hashedPassword) throws SQLException {
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, 'client')";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, hashedPassword);
+            stmt.executeUpdate();
+        }
+
+        String createUserQuery = "CREATE USER ? IDENTIFIED BY ?";
+        try (PreparedStatement stmt = connection.prepareStatement(createUserQuery)) {
+            stmt.setString(1, username);
+            stmt.setString(2, hashedPassword);
+            stmt.executeUpdate();
+        }
+
+        String grantQuery = "GRANT SELECT ON population.population TO ?";
+        try (PreparedStatement stmt = connection.prepareStatement(grantQuery)) {
+            stmt.setString(1, username);
+            stmt.executeUpdate();
+        }
+    }
+
+    private String hashPassword(String password) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] hashBytes = md.digest(password.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar hash MD5", e);
+        }
+    }
+}
+

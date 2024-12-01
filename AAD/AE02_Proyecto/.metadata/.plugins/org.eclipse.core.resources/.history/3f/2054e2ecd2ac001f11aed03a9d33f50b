@@ -1,0 +1,31 @@
+package controller;
+
+import app.CSVProcessor;
+import app.XMLProcessor;
+import view.MainView;
+import java.sql.Connection;
+
+public class MainController {
+
+	private MainView mainView;
+	private Connection connection;
+
+	public MainController(MainView mainView, Connection connection) {
+		this.mainView = mainView;
+		this.connection = connection;
+
+		mainView.getLoadCSVButton().addActionListener(e -> loadCSV());
+		mainView.getProcessXMLButton().addActionListener(e -> processXML());
+	}
+
+	private void loadCSV() {
+		String csvFilePath = mainView.getCSVFilePath();
+		CSVProcessor csvProcessor = new CSVProcessor(connection);
+		csvProcessor.processCSV(csvFilePath);
+	}
+
+	private void processXML() {
+		XMLProcessor xmlProcessor = new XMLProcessor(connection);
+		xmlProcessor.processXMLFiles();
+	}
+}

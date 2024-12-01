@@ -1,0 +1,102 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.util.Map;
+
+public abstract class BaseView extends JFrame {
+    private final JPanel buttonPanel;
+    private final JLabel messageLabel;
+    protected final JButton exportCsvButton;
+    private JButton sqlQueryButton = new JButton();
+    protected final JButton logoutButton;
+    protected final JButton loginButton;
+
+    public BaseView(String title) {
+        setTitle(title);
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+        addButton(sqlQueryButton);
+
+        buttonPanel = new JPanel();
+        add(buttonPanel, BorderLayout.NORTH);
+
+        exportCsvButton = new JButton("Exportar CSV");
+        sqlQueryButton = new JButton("Hacer Consulta SQL");
+        logoutButton = new JButton("Logout");
+        loginButton = new JButton("Login");
+        loginButton.setVisible(false);
+
+        messageLabel = new JLabel(" ");
+        add(messageLabel, BorderLayout.SOUTH);
+    }
+
+    protected void addButton(JButton button) {
+        buttonPanel.add(button);
+    }
+
+    public void setButtonVisibility(Map<JButton, Boolean> visibilityMap) {
+        for (Map.Entry<JButton, Boolean> entry : visibilityMap.entrySet()) {
+            entry.getKey().setVisible(entry.getValue());
+        }
+    }
+
+    public void toggleLoginLogout(boolean isLoggedIn) {
+        logoutButton.setVisible(isLoggedIn);
+        loginButton.setVisible(!isLoggedIn);
+    }
+
+    public void showMessage(String message) {
+        messageLabel.setText(message);
+    }
+    
+    public JButton getSqlQueryButton() {
+        return sqlQueryButton;
+    }
+
+    public void displayQueryResults(List<String[]> results) {
+        if (results.isEmpty()) {
+            showMessage("No se encontraron resultados.");
+            return;
+        }
+
+        String[] headers = results.get(0);
+        String[][] data = results.subList(1, results.size()).toArray(new String[0][]);
+
+        JTable resultTable = new JTable(data, headers);
+        JScrollPane scrollPane = new JScrollPane(resultTable);
+
+        JFrame resultFrame = new JFrame("Resultados de la Consulta");
+        resultFrame.setSize(800, 600);
+        resultFrame.setLayout(new BorderLayout());
+
+        JPanel buttonPanel = new JPanel();
+        JButton backButton = new JButton("Atrás");
+
+        buttonPanel.add(backButton);
+        buttonPanel.add(exportCsvButton);
+
+        resultFrame.add(scrollPane, BorderLayout.CENTER);
+        resultFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        resultFrame.setLocationRelativeTo(null);
+        resultFrame.setVisible(true);
+
+        backButton.addActionListener(e -> resultFrame.dispose());
+    }
+    
+    public void displayXmlContent(String content) {
+        JFrame frame = new JFrame("Contenido XML");
+        JTextArea textArea = new JTextArea(content);
+        textArea.setEditable(false);
+
+        frame.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        frame.setSize(600, 400);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+
+}

@@ -1,0 +1,97 @@
+package utils;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+public class XmlProcessor {
+
+    public void generateXmlFile(String country, String xmlContent) {
+        try {
+            File dir = new File("xml");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            FileWriter writer = new FileWriter(new File(dir, country + ".xml"));
+            writer.write(xmlContent);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String[] parseXmlContent(File xmlFile) throws Exception {
+        String[] row = new String[8];
+        
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(xmlFile);
+        
+        NodeList country = doc.getElementsByTagName("country");
+        NodeList population = doc.getElementsByTagName("population");
+        NodeList density = doc.getElementsByTagName("density");
+        NodeList area = doc.getElementsByTagName("area");
+        NodeList fertility = doc.getElementsByTagName("fertility");
+        NodeList age = doc.getElementsByTagName("age");
+        NodeList urban = doc.getElementsByTagName("urban");
+        NodeList share = doc.getElementsByTagName("share");
+        
+        row[0] = country.item(0).getTextContent();
+        row[1] = population.item(0).getTextContent();
+        row[2] = density.item(0).getTextContent();
+        row[3] = area.item(0).getTextContent();
+        row[4] = fertility.item(0).getTextContent();
+        row[5] = age.item(0).getTextContent();
+        row[6] = urban.item(0).getTextContent();
+        row[7] = share.item(0).getTextContent();
+        
+        return row;
+    }
+
+    public File getXmlDirectory() {
+        return new File("xml");
+    }
+
+    public String generateXmlContent(String[] row) {
+        if (row.length < 8) {
+            throw new IllegalArgumentException("Fila con datos incompletos: " + String.join(",", row));
+        }
+
+        String country = escapeXml(row[0]);
+        String population = escapeXml(row[1]);
+        String density = escapeXml(row[2]);
+        String area = escapeXml(row[3]);
+        String fertility = escapeXml(row[4]);
+        String age = escapeXml(row[5]);
+        String urban = escapeXml(row[6]);
+        String share = escapeXml(row[7]);
+
+        String xmlContent = "<populationData>";
+        xmlContent += "<country>" + country + "</country>";
+        xmlContent += "<population>" + population + "</population>";
+        xmlContent += "<density>" + density + "</density>";
+        xmlContent += "<area>" + area + "</area>";
+        xmlContent += "<fertility>" + fertility + "</fertility>";
+        xmlContent += "<age>" + age + "</age>";
+        xmlContent += "<urban>" + urban + "</urban>";
+        xmlContent += "<share>" + share + "</share>";
+        xmlContent += "</populationData>";
+
+        return xmlContent;
+    }
+
+    private String escapeXml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&apos;");
+    }
+}

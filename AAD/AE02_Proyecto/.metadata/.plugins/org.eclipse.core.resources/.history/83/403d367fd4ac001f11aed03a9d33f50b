@@ -1,0 +1,29 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import view.MainView;
+
+public class MainController {
+	private MainView view;
+	private Connection connection;
+
+	public MainController(MainView view, Connection connection) {
+		this.view = view;
+		this.connection = connection;
+
+		this.view.getRegisterButton().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				handleRegister();
+			}
+		});
+	}
+
+	private void handleRegister() {
+		System.out.println("Registrar nuevo usuario...");
+		RegisterView registerView = new RegisterView();
+		registerView.setVisible(true);
+	}
+}

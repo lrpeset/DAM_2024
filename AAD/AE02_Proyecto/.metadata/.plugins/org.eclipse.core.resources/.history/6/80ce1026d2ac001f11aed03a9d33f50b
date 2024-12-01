@@ -1,0 +1,55 @@
+package app;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+
+public class CSVProcessor {
+
+	private Connection connection;
+
+	public CSVProcessor(Connection connection) {
+		this.connection = connection;
+	}
+
+	public void processCSV(String filePath) {
+		try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+			String headerLine = br.readLine();
+			if (headerLine != null) {
+				String[] headers = headerLine.split(",");
+				deleteExistingTable();
+				createPopulationTable(headers);
+				String line;
+				while ((line = br.readLine()) != null) {
+					String[] data = line.split(",");
+					XMLGenerator xmlGenerator = new XMLGenerator();
+					xmlGenerator.generateXML(data);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void deleteExistingTable() throws Exception {
+		try (Statement stmt = connection.createStatement()) {
+			String sql = "DROP TABLE IF EXISTS population";
+			stmt.executeUpdate(sql);
+		}
+	}
+
+	private void createPopulationTable(String[] headers) throws Exception {
+		StringBuilder createTableSQL = new StringBuilder("CREATE TABLE population (");
+		for (String header : headers) {
+			createTableSQL.append(header).append(" VARCHAR(30),");
+		}
+		createTableSQL.deleteCharAt(createTableSQL.length() - 1);
+		createTableSQL.append(")");
+
+		try (Statement stmt = connection.createStatement()) {
+			stmt.executeUpdate(createTableSQL.toString());
+		}
+	}
+}

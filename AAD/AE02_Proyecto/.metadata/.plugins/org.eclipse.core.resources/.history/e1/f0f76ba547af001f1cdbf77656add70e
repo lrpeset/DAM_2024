@@ -1,0 +1,139 @@
+package model;
+
+import utils.Authentication;
+import utils.CsvProcessor;
+import utils.XmlProcessor;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class AdminActions {
+    private Connection connection;
+    private CsvProcessor csvProcessor;
+    private XmlProcessor xmlProcessor;
+
+    public AdminActions(Connection connection) {
+        this.connection = connection;
+        this.csvProcessor = new CsvProcessor(connection);
+        this.xmlProcessor = new XmlProcessor();
+    }
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
+
+    public void closeConnection() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+    }
+
+    public boolean isConnectionActive() {
+        try {
+            return connection != null && !connection.isClosed();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean registerUser(User adminUser, User newUser) {
+        if (!adminUser.getUserType().equals("admin")) {
+            return false;
+        }
+
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, newUser.getUsername());
+            stmt.setString(2, Authentication.hashPassword(newUser.getHashedPassword()));
+            stmt.setString(3, newUser.getUserType());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public String processCsvAndGenerateXml(String csvFilePath) throws Exception {
+        clearPopulationTable();
+        List<String[]> rows = csvProcessor.readCsv(csvFilePath);
+
+        StringBuilder xmlContent = new StringBuilder();
+        for (String[] row : rows) {
+            csvProcessor.insertRowToDatabase(row);
+            String xml = xmlProcessor.generateXmlContent(row);
+            String country = row[0];
+            xmlProcessor.generateXmlFile(country, xml);
+            xmlContent.append(String.join(", ", row)).append("\n");
+        }
+        return xmlContent.toString();
+    }
+
+    private void clearPopulationTable() throws SQLException {
+        String deleteSQL = "DELETE FROM population";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(deleteSQL);
+        }
+    }
+
+    public List<String[]> executeSelectQuery(String query, String userType) throws Exception {
+        if ("client".equals(userType) && !query.toLowerCase().contains("from population")) {
+            throw new IllegalAccessException("Los usuarios tipo 'client' solo pueden consultar la tabla 'population'.");
+        }
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            int columnCount = rs.getMetaData().getColumnCount();
+            List<String[]> results = new ArrayList<>();
+
+            String[] headers = new String[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                headers[i - 1] = rs.getMetaData().getColumnName(i);
+            }
+            results.add(headers);
+
+            while (rs.next()) {
+                String[] row = new String[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    row[i - 1] = rs.getString(i);
+                }
+                results.add(row);
+            }
+
+            return results;
+        }
+    }
+    
+    
+
+    public void exportToCsv(List<Map<String, Object>> queryResults, String filePath) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            if (queryResults.isEmpty()) {
+                throw new RuntimeException("No hay datos para exportar.");
+            }
+
+            Set<String> headers = queryResults.get(0).keySet();
+            writer.write(String.join(";", headers));
+            writer.newLine();
+
+            for (Map<String, Object> row : queryResults) {
+                List<String> values = new ArrayList<>();
+                for (String header : headers) {
+                    values.add(row.get(header) != null ? row.get(header).toString() : "");
+                }
+                writer.write(String.join(";", values));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al exportar los datos a CSV.", e);
+        }
+    }
+}

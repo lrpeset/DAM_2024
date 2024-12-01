@@ -1,0 +1,48 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainView extends JFrame {
+    private JButton registerButton;
+    private JButton importCsvButton;
+
+    public MainView() {
+        setTitle("Vista Principal");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+
+        registerButton = new JButton("Registrar Usuario");
+        importCsvButton = new JButton("Importar CSV");
+
+        panel.add(registerButton);
+        panel.add(importCsvButton);
+
+        add(panel);
+
+        registerButton.setVisible(true); //cambiar si no es admin
+        importCsvButton.setVisible(true);//cambiar si no es admin
+    }
+
+    public void showAdminButtons() {
+        registerButton.setVisible(true);
+        importCsvButton.setVisible(true);
+    }
+
+    public void showImportCsvButtonOnly() {
+        registerButton.setVisible(false);
+        importCsvButton.setVisible(true);
+    }
+
+    public JButton getRegisterButton() {
+        return registerButton;
+    }
+
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+}

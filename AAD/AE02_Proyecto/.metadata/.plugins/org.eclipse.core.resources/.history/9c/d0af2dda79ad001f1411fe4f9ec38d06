@@ -1,0 +1,15 @@
+package controller;
+
+import view.MainUserView;
+
+public class MainUserController {
+    private MainUserView userView;
+
+    public MainUserController(MainUserView userView) {
+        this.userView = userView;
+    }
+
+    public void start() {
+        userView.setVisible(true);
+    }
+}

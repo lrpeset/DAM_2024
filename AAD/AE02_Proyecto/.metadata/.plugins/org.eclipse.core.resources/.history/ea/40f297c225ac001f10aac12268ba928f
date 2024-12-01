@@ -1,0 +1,32 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class ClientDashboardView extends JFrame {
+	private JButton executeQueryButton;
+	private JButton logoutButton;
+
+	public ClientDashboardView() {
+		setTitle("Client Dashboard");
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setSize(300, 200);
+		setLayout(new GridLayout(2, 1));
+
+		executeQueryButton = new JButton("Execute Query");
+		add(executeQueryButton);
+
+		logoutButton = new JButton("Logout");
+		add(logoutButton);
+
+		setLocationRelativeTo(null);
+	}
+
+	public JButton getExecuteQueryButton() {
+		return executeQueryButton;
+	}
+
+	public JButton getLogoutButton() {
+		return logoutButton;
+	}
+}

@@ -1,0 +1,50 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import view.MainView;
+import view.RegisterView;
+
+public class MainController {
+	private MainView view;
+	private Connection connection;
+
+	public MainController(MainView view, Connection connection) {
+		this.view = view;
+		this.connection = connection;
+
+		this.view.getRegisterButton().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				showRegisterView();
+			}
+		});
+		
+		this.view.getImportCsvButton().addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        importCsv();
+		    }
+		});
+	}
+
+	private void showRegisterView() {
+	    RegisterView registerView = new RegisterView(connection);
+	    RegisterController registerController = new RegisterController(registerView, connection);
+	    registerView.setVisible(true);
+	}
+	
+	private void importCsv() {
+	    try {
+	        CsvProcessor csvProcessor = new CsvProcessor(connection);
+	        String concatenatedXmlContent = csvProcessor.processCsv("archivo.csv");
+	        JTextArea textArea = new JTextArea(concatenatedXmlContent);
+	        JScrollPane scrollPane = new JScrollPane(textArea);
+	        JOptionPane.showMessageDialog(null, scrollPane, "Contenido XML", JOptionPane.INFORMATION_MESSAGE);
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        JOptionPane.showMessageDialog(view, "Error al importar el CSV: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+	    }
+	}
+}

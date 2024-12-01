@@ -1,0 +1,48 @@
+package app;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import controller.LoginController;
+import view.LoginView;
+import model.DatabaseConnection;
+
+/**
+ * Clase principal de la aplicación. Es el punto de entrada que se encarga de establecer 
+ * la conexión con la base de datos y de inicializar las vistas y controladores de la 
+ * interfaz de usuario para el inicio de sesión.
+ * 
+ * <p>Esta clase maneja la conexión a la base de datos, mostrando un mensaje de éxito
+ * o error dependiendo del estado de la conexión. Si la conexión es exitosa, inicializa
+ * la vista de inicio de sesión {@link LoginView} y su respectivo controlador {@link LoginController}.
+ * </p>
+ */
+public class Main {
+
+    /**
+     * Método principal que se ejecuta al iniciar la aplicación. Establece la conexión
+     * con la base de datos y muestra la vista de inicio de sesión si la conexión es exitosa.
+     *
+     * @param args Argumentos de la línea de comandos (no se utilizan en esta clase).
+     */
+    public static void main(String[] args) {
+        try {
+            // Establece la conexión con la base de datos
+            Connection connection = DatabaseConnection.getConnection();
+            System.out.println("Conexión exitosa con la base de datos.");
+
+            // Inicializa la vista de login
+            LoginView loginView = new LoginView();
+
+            // Inicializa el controlador de login y asocia la vista y la conexión
+            LoginController loginController = new LoginController(connection, loginView);
+            
+            // Muestra la vista de login
+            loginView.setVisible(true);
+
+        } catch (SQLException e) {
+            // Maneja los errores de conexión con la base de datos
+            System.err.println("Error al conectar con la base de datos:");
+            e.printStackTrace();
+        }
+    }
+}

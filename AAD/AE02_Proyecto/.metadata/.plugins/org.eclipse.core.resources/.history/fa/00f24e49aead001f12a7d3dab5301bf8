@@ -1,0 +1,38 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
+
+import utils.Authentication;
+
+public class AdminActions {
+    private Connection connection;
+
+    public AdminActions(Connection connection) {
+        this.connection = connection;
+    }
+
+    public boolean registerUser(User user) {
+        // Verificar si el usuario tiene permisos para registrar un nuevo usuario
+        // Esto depende de cómo determines quién está realizando el registro
+        // Aquí se asume que "admin" es el único usuario con permisos
+
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, Authentication.hashPassword(user.getHashedPassword()));
+            stmt.setString(3, user.getUserType());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void importData(List<String[]> data) {
+        // Implementar lógica de importación de datos según las necesidades
+    }
+}

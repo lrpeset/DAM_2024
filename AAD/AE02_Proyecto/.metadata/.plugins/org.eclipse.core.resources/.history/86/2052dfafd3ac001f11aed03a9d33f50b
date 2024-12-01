@@ -1,0 +1,56 @@
+package app;
+
+import org.w3c.dom.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+public class XMLProcessor {
+
+	private Connection connection;
+
+	public XMLProcessor(Connection connection) {
+		this.connection = connection;
+	}
+
+	public void processXMLFiles() {
+		File folder = new File("xml");
+		File[] files = folder.listFiles((dir, name) -> name.endsWith(".xml"));
+
+		if (files != null) {
+			for (File file : files) {
+				try {
+					DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+					DocumentBuilder builder = factory.newDocumentBuilder();
+					Document document = builder.parse(file);
+					document.getDocumentElement().normalize();
+
+					NodeList nodeList = document.getElementsByTagName("field");
+					String[] data = new String[nodeList.getLength()];
+					for (int i = 0; i < nodeList.getLength(); i++) {
+						Node node = nodeList.item(i);
+						if (node.getNodeType() == Node.ELEMENT_NODE) {
+							data[i] = node.getTextContent();
+						}
+					}
+					insertDataIntoDatabase(data);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	private void insertDataIntoDatabase(String[] data) throws Exception {
+		String sql = "INSERT INTO population (column1, column2, column3) VALUES (?, ?, ?)";
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			for (int i = 0; i < data.length; i++) {
+				stmt.setString(i + 1, data[i]);
+			}
+			stmt.executeUpdate();
+		}
+	}
+}

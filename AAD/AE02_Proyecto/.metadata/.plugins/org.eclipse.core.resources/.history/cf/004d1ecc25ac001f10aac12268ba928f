@@ -1,0 +1,33 @@
+package controller;
+
+import view.ClientDashboardView;
+import view.LoginView;
+import view.QueryResultView;
+
+public class ClientController {
+	private ClientDashboardView view;
+
+	public ClientController(ClientDashboardView view) {
+		this.view = view;
+	}
+
+	public void init() {
+		view.getExecuteQueryButton().addActionListener(e -> executeQuery());
+		view.getLogoutButton().addActionListener(e -> logout());
+
+		view.setVisible(true);
+	}
+
+	private void executeQuery() {
+		QueryResultView queryView = new QueryResultView();
+		QueryController queryController = new QueryController(queryView);
+		queryController.init();
+	}
+
+	private void logout() {
+		view.dispose();
+		LoginView loginView = new LoginView();
+		LoginController loginController = new LoginController(loginView);
+		loginController.init();
+	}
+}

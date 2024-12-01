@@ -1,0 +1,26 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class RegisterModel {
+    private Connection connection;
+
+    public RegisterModel(Connection connection) {
+        this.connection = connection;
+    }
+
+    public boolean registerUser(String login, String passwordHash) {
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, 'client')";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, login);
+            stmt.setString(2, passwordHash);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+}

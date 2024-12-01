@@ -1,0 +1,55 @@
+package model;
+
+import app.DBConnection;
+import app.Utils;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class RegisterModel {
+
+	public boolean registerNewUser(String username, String password) {
+		if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+			return false;
+		}
+
+		String hashedPassword = Utils.getMD5Hash(password);
+
+		if (hashedPassword == null) {
+			return false;
+		}
+
+		Connection connection = DBConnection.getConnection();
+		if (connection == null) {
+			return false;
+		}
+
+		String sqlCreateUser = "CREATE USER ? IDENTIFIED BY ?";
+		String sqlGrantPermissions = "GRANT SELECT ON population.population TO ?";
+
+		try {
+			PreparedStatement pstmtCreateUser = connection.prepareStatement(sqlCreateUser);
+			pstmtCreateUser.setString(1, username);
+			pstmtCreateUser.setString(2, hashedPassword);
+
+			pstmtCreateUser.executeUpdate();
+
+			PreparedStatement pstmtGrantPermissions = connection.prepareStatement(sqlGrantPermissions);
+			pstmtGrantPermissions.setString(1, username);
+
+			pstmtGrantPermissions.executeUpdate();
+
+			pstmtCreateUser.close();
+			pstmtGrantPermissions.close();
+			connection.close();
+
+			return true;
+
+		} catch (SQLException e) {
+			System.out.println("Error al registrar el usuario:");
+			e.printStackTrace();
+			return false;
+		}
+	}
+}

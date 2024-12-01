@@ -1,0 +1,43 @@
+package app;
+
+import controller.LoginController;
+import model.LoginModel;
+import view.LoginView;
+
+import javax.swing.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class Main {
+
+    public static void main(String[] args) {
+        final Connection connection;  // Hacer la conexión final
+        try {
+            connection = DBConnection.getConnection();
+            if (connection != null) {
+                System.out.println("Conexión a la base de datos exitosa.");
+            } else {
+                System.out.println("Fallo en la conexión a la base de datos.");
+                return;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                LoginView loginView = new LoginView();
+                try {
+                    LoginModel loginModel = new LoginModel();
+                    // Ahora puedes pasar la conexión al LoginController
+                    LoginController loginController = new LoginController(loginModel, loginView, connection);
+                    loginView.setVisible(true);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+}

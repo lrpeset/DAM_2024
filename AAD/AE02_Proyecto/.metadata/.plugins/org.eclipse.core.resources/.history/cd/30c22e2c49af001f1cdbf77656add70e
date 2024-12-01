@@ -1,0 +1,24 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class UserView extends JFrame {
+    private final JButton sqlQueryButton;
+    private final JButton exportCsvButton;
+    private final JButton logoutButton;
+    private final JLabel messageLabel;
+    private final JButton loginButton;
+
+    public UserView() {
+        setTitle("Panel de Usuario");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        sqlQueryButton = new JButton("Hacer Consulta SQL");
+        exportCsvButton = new JButton("Exportar CSV");
+        logoutButton = new JButton("Logout");
+        loginButton = new JButton("Login");
+    }
+}

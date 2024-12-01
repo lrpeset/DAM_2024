@@ -1,0 +1,19 @@
+package view;
+
+import javax.swing.*;
+
+public class LoginView extends JFrame {
+JPanel contentPane;
+JTextField textNombre;
+JTextField textApellidos;
+
+public LoginView() {
+initComponents();
+}
+
+public void initComponents() {
+setResizable(false);
+setTitle("Aplicacion");
+setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+}
+}

@@ -1,0 +1,71 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import model.CsvProcessor;
+import view.MainView;
+import view.RegisterView;
+
+public class MainController {
+    private MainView view;
+    private Connection connection;
+
+    public MainController(MainView view, Connection connection) {
+        this.view = view;
+        this.connection = connection;
+
+        this.view.getRegisterButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showRegisterView();
+            }
+        });
+
+        this.view.getImportCsvButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                importCsv();
+            }
+        });
+    }
+
+    private void showRegisterView() {
+        RegisterView registerView = new RegisterView(connection);
+        RegisterController registerController = new RegisterController(registerView, connection);
+        registerView.setVisible(true);
+    }
+
+    private void importCsv() {
+        try {
+            String csvFilePath = "csv/AE02_population.csv";  // Asegúrate de que el archivo esté en el directorio correcto
+            CsvProcessor csvProcessor = new CsvProcessor(connection);
+            
+            // Verificar si el archivo existe
+            File csvFile = new File(csvFilePath);
+            if (!csvFile.exists()) {
+                throw new IOException("El archivo CSV no se encuentra en la ruta especificada.");
+            }
+
+            // Procesar el CSV y obtener el contenido XML concatenado
+            String concatenatedXmlContent = csvProcessor.processCsv(csvFilePath);
+            
+            // Mostrar el contenido en un JTextArea dentro de un JScrollPane
+            JTextArea textArea = new JTextArea(concatenatedXmlContent);
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            JOptionPane.showMessageDialog(null, scrollPane, "Contenido XML", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(view, "Error al importar el CSV: " + ex.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(view, "Error inesperado: " + ex.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}

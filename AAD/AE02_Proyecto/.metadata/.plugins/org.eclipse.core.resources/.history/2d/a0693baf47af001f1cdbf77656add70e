@@ -1,0 +1,154 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class AdminView extends JFrame {
+    private final JButton importCsvButton;
+    private final JButton registerUserButton;
+    private final JButton sqlQueryButton;
+    private final JButton exportCsvButton;
+    private final JButton logoutButton;
+    private final JButton loginButton;
+    private final JLabel messageLabel;
+
+    public AdminView() {
+        setTitle("Panel de Administrador");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Crear botones
+        importCsvButton = new JButton("Importar CSV");
+        registerUserButton = new JButton("Registrar Usuario");
+        sqlQueryButton = new JButton("Hacer Consulta SQL");
+        exportCsvButton = new JButton("Exportar CSV");
+        logoutButton = new JButton("Cerrar Sesión");
+        loginButton = new JButton("Iniciar Sesión");
+
+        // Panel para los botones
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(3, 2, 10, 10));
+        buttonPanel.add(importCsvButton);
+        buttonPanel.add(registerUserButton);
+        buttonPanel.add(sqlQueryButton);
+        buttonPanel.add(exportCsvButton);
+        buttonPanel.add(logoutButton);
+        buttonPanel.add(loginButton);
+
+        // Etiqueta para mensajes
+        messageLabel = new JLabel(" ", SwingConstants.CENTER);
+        messageLabel.setForeground(Color.RED);
+
+        // Agregar componentes al JFrame
+        add(buttonPanel, BorderLayout.CENTER);
+        add(messageLabel, BorderLayout.SOUTH);
+    }
+
+    // Getters para los botones
+    public JButton getImportCsvButton() {
+        return importCsvButton;
+    }
+
+    public JButton getRegisterUserButton() {
+        return registerUserButton;
+    }
+
+    public JButton getSqlQueryButton() {
+        return sqlQueryButton;
+    }
+
+    public JButton getExportCsvButton() {
+        return exportCsvButton;
+    }
+
+    public JButton getLogoutButton() {
+        return logoutButton;
+    }
+
+    public JButton getLoginButton() {
+        return loginButton;
+    }
+
+    public void showMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    public void toggleLoginLogout(boolean loggedIn) {
+        loginButton.setEnabled(!loggedIn);
+        logoutButton.setEnabled(loggedIn);
+    }
+
+    public void displayQueryResults(List<String[]> results) {
+        if (results.isEmpty()) {
+            showMessage("No se encontraron resultados.");
+            return;
+        }
+
+        String[] headers = results.get(0);
+        String[][] data = results.subList(1, results.size()).toArray(new String[0][]);
+
+        JTable resultTable = new JTable(data, headers);
+        JScrollPane scrollPane = new JScrollPane(resultTable);
+
+        JFrame resultFrame = new JFrame("Resultados de la Consulta");
+        resultFrame.setSize(800, 600);
+        resultFrame.setLayout(new BorderLayout());
+
+        JPanel buttonPanel = new JPanel();
+        JButton backButton = new JButton("Atrás");
+
+        buttonPanel.add(backButton);
+        buttonPanel.add(exportCsvButton);
+
+        resultFrame.add(scrollPane, BorderLayout.CENTER);
+        resultFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        resultFrame.setLocationRelativeTo(null);
+        resultFrame.setVisible(true);
+
+        backButton.addActionListener(e -> resultFrame.dispose());
+    }
+
+    public JFrame createRegisterUserFrame() {
+        JFrame frame = new JFrame("Registrar Nuevo Usuario");
+        frame.setSize(400, 300);
+        frame.setLayout(new BorderLayout());
+
+        JPanel inputPanel = new JPanel(new GridLayout(3, 2));
+        JTextField loginField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+        JPasswordField confirmPasswordField = new JPasswordField();
+
+        inputPanel.add(new JLabel("Usuario:"));
+        inputPanel.add(loginField);
+        inputPanel.add(new JLabel("Contraseña:"));
+        inputPanel.add(passwordField);
+        inputPanel.add(new JLabel("Confirmar Contraseña:"));
+        inputPanel.add(confirmPasswordField);
+
+        frame.add(inputPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        JButton confirmButton = new JButton("Confirmar");
+        JButton backButton = new JButton("Atrás");
+        buttonPanel.add(confirmButton);
+        buttonPanel.add(backButton);
+
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+        frame.setLocationRelativeTo(null);
+        return frame;
+    }
+
+    public void displayXmlContent(String content) {
+        JFrame frame = new JFrame("Contenido XML");
+        JTextArea textArea = new JTextArea(content);
+        textArea.setEditable(false);
+
+        frame.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        frame.setSize(600, 400);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+}

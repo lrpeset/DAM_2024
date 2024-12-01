@@ -1,0 +1,53 @@
+package model;
+
+import utils.Authentication;
+import utils.CsvProcessor;
+import utils.DatabaseOperations;
+import utils.XmlProcessor;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+
+public class AdminActions {
+    private final Connection connection;
+    private final CsvProcessor csvProcessor;
+    private final XmlProcessor xmlProcessor;
+
+    public AdminActions(Connection connection) {
+        this.connection = connection;
+        this.csvProcessor = new CsvProcessor(connection);
+        this.xmlProcessor = new XmlProcessor();
+    }
+
+    public void closeConnection() throws SQLException {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
+    }
+
+    public boolean registerUser(User adminUser, User newUser) {
+        return DatabaseOperations.registerUser(connection, adminUser, newUser);
+    }
+
+    public String processCsvAndGenerateXml(String csvFilePath) throws Exception {
+        return csvProcessor.processCsvAndGenerateXml(csvFilePath);
+    }
+
+    public List<Map<String, Object>> convertResultsToMap(List<String[]> results) {
+        return DatabaseOperations.convertResultsToMap(results);
+    }
+
+    public List<String[]> executeSelectQuery(String query, String userType) throws Exception {
+        return DatabaseOperations.executeSelectQuery(connection, query, userType);
+    }
+
+    public void exportToCsv(List<Map<String, Object>> queryResults, String filePath) throws Exception {
+        DatabaseOperations.exportToCsv(queryResults, filePath);
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+}

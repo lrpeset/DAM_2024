@@ -1,0 +1,80 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * Clase que representa la vista de inicio de sesión.
+ * Esta clase extiende JFrame y proporciona una interfaz gráfica de usuario para la autenticación del usuario.
+ * Incluye campos para el nombre de usuario y la contraseña, un botón para iniciar sesión
+ * y una etiqueta para mostrar mensajes.
+ */
+public class LoginView extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton;
+    private JLabel messageLabel;
+
+    /**
+     * Constructor de la clase LoginView.
+     * Configura la interfaz gráfica, añadiendo los componentes como los campos de texto, botones y etiquetas.
+     */
+    public LoginView() {
+        setTitle("Inicio de Sesión");
+        setSize(400, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel(new GridLayout(4, 1));
+
+        usernameField = new JTextField();
+        passwordField = new JPasswordField();
+        loginButton = new JButton("Iniciar sesión");
+        messageLabel = new JLabel("", SwingConstants.CENTER);
+
+        panel.add(new JLabel("Usuario:"));
+        panel.add(usernameField);
+        panel.add(new JLabel("Contraseña:"));
+        panel.add(passwordField);
+
+        add(panel, BorderLayout.CENTER);
+        add(loginButton, BorderLayout.SOUTH);
+        add(messageLabel, BorderLayout.NORTH);
+    }
+
+    /**
+     * Obtiene el nombre de usuario ingresado en el campo de texto.
+     *
+     * @return El nombre de usuario como una cadena de texto.
+     */
+    public String getUsername() {
+        return usernameField.getText().trim();
+    }
+
+    /**
+     * Obtiene la contraseña ingresada en el campo de texto.
+     *
+     * @return La contraseña como una cadena de texto.
+     */
+    public String getPassword() {
+        return new String(passwordField.getPassword()).trim();
+    }
+
+    /**
+     * Obtiene el botón para iniciar sesión.
+     *
+     * @return El botón para iniciar sesión.
+     */
+    public JButton getLoginButton() {
+        return loginButton;
+    }
+
+    /**
+     * Establece un mensaje en la etiqueta para mostrar al usuario.
+     *
+     * @param message El mensaje a mostrar.
+     */
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+}

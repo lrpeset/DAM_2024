@@ -1,0 +1,40 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainView extends JFrame {
+	private JButton selectCSVButton;
+	private JTextArea outputTextArea;
+
+	public MainView() {
+		setTitle("Aplicación de Registro");
+		setSize(500, 400);
+		setLocationRelativeTo(null);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLayout(new BorderLayout());
+
+		selectCSVButton = new JButton("Seleccionar archivo CSV");
+		add(selectCSVButton, BorderLayout.NORTH);
+
+		outputTextArea = new JTextArea();
+		outputTextArea.setEditable(false);
+		add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+	}
+
+	public JButton getSelectCSVButton() {
+		return selectCSVButton;
+	}
+
+	public JTextArea getOutputTextArea() {
+		return outputTextArea;
+	}
+
+	public void setOutputText(String text) {
+		outputTextArea.setText(text);
+	}
+
+	public void addSelectCSVListener(java.awt.event.ActionListener listener) {
+		selectCSVButton.addActionListener(listener);
+	}
+}

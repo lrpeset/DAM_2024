@@ -1,0 +1,30 @@
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import view.MainView;
+import view.RegisterView;
+
+public class MainController {
+	private MainView view;
+	private Connection connection;
+
+	public MainController(MainView view, Connection connection) {
+		this.view = view;
+		this.connection = connection;
+
+		this.view.getRegisterButton().addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				showRegisterView();
+			}
+		});
+	}
+
+	private void showRegisterView() {
+		RegisterView registerView = new RegisterView(connection);
+		RegisterController registerController = new RegisterController(registerView, connection);
+		registerView.setVisible(true);
+	}
+}

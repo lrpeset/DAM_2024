@@ -1,0 +1,22 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainView extends JFrame {
+	private JButton btnRegisterUser;
+
+	public MainView() {
+		setTitle("Ventana Principal");
+		setSize(400, 300);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLayout(new FlowLayout());
+
+		btnRegisterUser = new JButton("Registrar Usuario");
+		add(btnRegisterUser);
+	}
+
+	public JButton getBtnRegisterUser() {
+		return btnRegisterUser;
+	}
+}

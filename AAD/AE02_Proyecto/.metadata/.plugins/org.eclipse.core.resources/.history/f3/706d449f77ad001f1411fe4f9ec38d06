@@ -1,0 +1,43 @@
+package controller;
+
+import model.LoginModel;
+import view.LoginView;
+import view.MainAdminView;
+import view.MainUserView;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class LoginController {
+    private LoginView loginView;
+    private LoginModel loginModel;
+
+    public LoginController(LoginView loginView, LoginModel loginModel) {
+        this.loginView = loginView;
+        this.loginModel = loginModel;
+
+        this.loginView.getLoginButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                handleLogin();
+            }
+        });
+    }
+
+    private void handleLogin() {
+        String username = loginView.getUsername();
+        String password = loginView.getPassword();
+
+        String userType = loginModel.validateUser(username, password);
+
+        if (userType == null) {
+            loginView.setMessage("Usuario o contraseña inválidos.");
+        } else if (userType.equals("admin")) {
+            loginView.dispose();
+            new MainAdminController(new MainAdminView()).start();
+        } else {
+            loginView.dispose();
+            new MainUserController(new MainUserView()).start();
+        }
+    }
+}

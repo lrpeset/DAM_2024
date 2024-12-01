@@ -1,0 +1,79 @@
+package controller;
+
+import model.CsvProcessor;
+import model.XmlProcessor;
+import view.MainView;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.sql.Connection;
+import java.util.List;
+
+public class MainController {
+    private MainView view;
+    private Connection connection;
+    private CsvProcessor csvProcessor;
+    private XmlProcessor xmlProcessor;
+
+    public MainController(MainView view, Connection connection) {
+        this.view = view;
+        this.connection = connection;
+        this.csvProcessor = new CsvProcessor(connection);
+        this.xmlProcessor = new XmlProcessor();
+
+        this.view.getImportCsvButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                importCsv();
+            }
+        });
+    }
+
+    private void importCsv() {
+        try {
+            // Paso 1: Leer el archivo CSV
+            String csvFilePath = "csv/AE02_population.csv";
+            List<String[]> rows = csvProcessor.readCsv(csvFilePath);
+
+            // Paso 2: Crear la tabla en la base de datos
+            csvProcessor.createPopulationTable();
+
+            // Paso 3: Generar archivos XML y concatenar contenido XML
+            StringBuilder concatenatedXmlContent = new StringBuilder();
+            for (int i = 0; i < rows.size(); i++) {
+                String[] row = rows.get(i);
+                String xmlContent = csvProcessor.generateXmlContent(row);
+
+                concatenatedXmlContent.append(xmlContent).append("\n");
+
+                // Generar archivo XML para cada país
+                xmlProcessor.generateXmlFile(row[0], xmlContent);
+
+                // Insertar datos en la base de datos
+                csvProcessor.insertRowToDatabase(row);
+            }
+
+            // Paso 4: Mostrar el contenido XML concatenado en el JTextArea
+            JTextArea textArea = new JTextArea(concatenatedXmlContent.toString());
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            JOptionPane.showMessageDialog(null, scrollPane, "Contenido XML", JOptionPane.INFORMATION_MESSAGE);
+
+            // Paso 5: Leer los archivos XML y hacer las inserciones en la base de datos
+            File[] xmlFiles = xmlProcessor.getXmlDirectory().listFiles((dir, name) -> name.endsWith(".xml"));
+            if (xmlFiles != null) {
+                for (File xmlFile : xmlFiles) {
+                    String[] row = xmlProcessor.parseXmlContent(xmlFile);
+                    csvProcessor.insertRowToDatabase(row);
+                }
+            }
+
+            // Mostrar mensaje de éxito
+            JOptionPane.showMessageDialog(view, "Importación completada exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(view, "Error al importar el CSV: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}

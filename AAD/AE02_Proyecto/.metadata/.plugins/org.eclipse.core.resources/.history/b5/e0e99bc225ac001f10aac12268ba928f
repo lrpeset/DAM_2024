@@ -1,0 +1,33 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class QueryResultView extends JFrame {
+	private JTextArea queryResultArea;
+	private JButton exportCsvButton;
+
+	public QueryResultView() {
+		setTitle("Query Results");
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setSize(500, 400);
+		setLayout(new BorderLayout());
+
+		queryResultArea = new JTextArea();
+		queryResultArea.setEditable(false);
+		add(new JScrollPane(queryResultArea), BorderLayout.CENTER);
+
+		exportCsvButton = new JButton("Export to CSV");
+		add(exportCsvButton, BorderLayout.SOUTH);
+
+		setLocationRelativeTo(null);
+	}
+
+	public JTextArea getQueryResultArea() {
+		return queryResultArea;
+	}
+
+	public JButton getExportCsvButton() {
+		return exportCsvButton;
+	}
+}

@@ -1,0 +1,33 @@
+package model;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import utils.Authentication;
+
+public class UserActions {
+    private Connection connection;
+
+    public UserActions(Connection connection) {
+        this.connection = connection;
+    }
+
+    public boolean registerUser(User user) {
+        String query = "INSERT INTO users (login, password, type) VALUES (?, ?, ?)";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, Authentication.hashPassword(user.getHashedPassword())); // Usamos la clase Authentication para el hash
+            stmt.setString(3, user.getUserType());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void importData(List<String[]> data) {
+        // Implementar lógica de importación de datos según las necesidades
+    }
+}

@@ -1,0 +1,30 @@
+package app;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DBConnection {
+
+    private static final String URL = "jdbc:mysql://localhost:3306/mi_base_de_datos"; // Cambia el nombre de la base de datos aquí
+    private static final String USER = "admin";  // Tu usuario de MySQL
+    private static final String PASSWORD = "admin"; // Tu contraseña de MySQL
+
+    // Método que obtiene la conexión con la base de datos
+    public static Connection getConnection() throws SQLException {
+        try {
+            // Cargar el driver JDBC
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+            // Crear y devolver la conexión
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+
+        } catch (ClassNotFoundException e) {
+            // Si no se encuentra el driver, lanzamos una SQLException
+            throw new SQLException("Error al cargar el driver JDBC", e);
+        } catch (SQLException e) {
+            // Lanzamos una SQLException si la conexión falla
+            throw new SQLException("Error al conectar con la base de datos", e);
+        }
+    }
+}

@@ -1,0 +1,23 @@
+package app;
+
+import controller.LoginController;
+import app.DBConnection;
+import model.LoginModel;
+import view.LoginView;
+
+import java.sql.Connection;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            Connection connection = DBConnection.getConnection();
+
+            LoginView loginView = new LoginView();
+            LoginModel loginModel = new LoginModel(connection);
+            LoginController loginController = new LoginController(loginView, loginModel);
+            loginController.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

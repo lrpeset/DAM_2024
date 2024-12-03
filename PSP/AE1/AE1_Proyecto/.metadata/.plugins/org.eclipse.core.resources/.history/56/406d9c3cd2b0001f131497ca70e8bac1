@@ -1,0 +1,91 @@
+package simulador;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Simulador {
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Simulador de Proteínas");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+        
+        JPanel panel = new JPanel(new GridLayout(5, 2));
+        JLabel[] labels = new JLabel[4];
+        JTextField[] textFields = new JTextField[4];
+        String[] tipos = {"Primaria", "Secundaria", "Terciaria", "Cuaternaria"};
+        
+        for (int i = 0; i < 4; i++) {
+            labels[i] = new JLabel("Cantidad de " + tipos[i] + ":");
+            textFields[i] = new JTextField("0");
+            panel.add(labels[i]);
+            panel.add(textFields[i]);
+        }
+        
+        JButton simulateButton = new JButton("Iniciar Simulación");
+        panel.add(simulateButton);
+        frame.add(panel);
+
+        simulateButton.addActionListener(e -> {
+            try {
+                int[] cantidades = new int[4];
+                for (int i = 0; i < 4; i++) {
+                    cantidades[i] = Integer.parseInt(textFields[i].getText());
+                }
+
+                long startTimeMP = System.currentTimeMillis();
+                runMultiproceso(cantidades);
+                long endTimeMP = System.currentTimeMillis();
+
+                long startTimeMT = System.currentTimeMillis();
+                runMultihilo(cantidades);
+                long endTimeMT = System.currentTimeMillis();
+
+                JOptionPane.showMessageDialog(frame,
+                        "Simulación terminada.\n" +
+                                "Tiempo total (Multiproceso): " + (endTimeMP - startTimeMP) / 1000.0 + " s\n" +
+                                "Tiempo total (Multihilo): " + (endTimeMT - startTimeMT) / 1000.0 + " s");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    private static void runMultiproceso(int[] cantidades) throws IOException, InterruptedException {
+        for (int tipo = 1; tipo <= 4; tipo++) {
+            for (int i = 1; i <= cantidades[tipo - 1]; i++) {
+                ProcessBuilder builder = new ProcessBuilder(
+                        "java", "-cp", "bin", "simulador.SimulacionMP", String.valueOf(tipo));
+                builder.inheritIO();
+                Process process = builder.start();
+                process.waitFor();
+            }
+        }
+    }
+
+
+    private static void runMultihilo(int[] cantidades) {
+        List<Thread> threads = new ArrayList<>();
+
+        for (int tipo = 1; tipo <= 4; tipo++) {
+            for (int i = 1; i <= cantidades[tipo - 1]; i++) {
+                Thread thread = new Thread(new SimulacionMT(tipo, i));
+                threads.add(thread);
+                thread.start();
+            }
+        }
+
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+}

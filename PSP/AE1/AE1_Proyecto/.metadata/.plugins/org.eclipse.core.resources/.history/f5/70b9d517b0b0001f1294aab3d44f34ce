@@ -1,0 +1,40 @@
+package simulador;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class SimulacionMP implements Runnable {
+    private final int tipo;
+    private final int id;
+
+    public SimulacionMP(int tipo, int id) {
+        this.tipo = tipo;
+        this.id = id;
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Tiempo fijo de espera
+            long tiempoObjetivo = calcularTiempoObjetivo(tipo); // Define según el tipo
+            System.out.println("SimulaciónMP iniciada. Tiempo objetivo: " + tiempoObjetivo + " ms");
+            Thread.sleep(tiempoObjetivo); // Simulación fija
+            System.out.println("SimulaciónMP completada. Tiempo transcurrido: " + tiempoObjetivo + " ms");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private long calcularTiempoObjetivo(int tipo) {
+        // Define tiempos fijos por tipo
+        switch (tipo) {
+            case 1: return 5;    // Tipo 1: 5 ms
+            case 2: return 25;   // Tipo 2: 25 ms
+            case 3: return 125;  // Tipo 3: 125 ms
+            case 4: return 625;  // Tipo 4: 625 ms
+            default: return 100; // Valor predeterminado
+        }
+    }
+}

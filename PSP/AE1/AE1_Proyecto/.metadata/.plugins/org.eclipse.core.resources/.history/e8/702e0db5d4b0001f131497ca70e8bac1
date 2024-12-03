@@ -1,0 +1,27 @@
+package simulador;
+
+import java.io.IOException;
+
+public class SimulacionMT implements Runnable {
+    private final int tipo;
+    private final int index;
+
+    public SimulacionMT(int tipo, int index) {
+        this.tipo = tipo;
+        this.index = index;
+    }
+
+    @Override
+    public void run() {
+        try {
+            long start = System.currentTimeMillis();
+            double result = SimulacionUtils.simulation(tipo);
+            long end = System.currentTimeMillis();
+
+            String fileName = "PROT_MT_" + tipo + "_n" + index + "_" + SimulacionUtils.generateTimestamp(start) + ".sim";
+            SimulacionUtils.writeSimulationResults(fileName, start, end, result);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

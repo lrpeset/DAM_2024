@@ -1,0 +1,30 @@
+package simulador;
+
+import java.io.IOException;
+
+public class SimulacionMP {
+
+    public static void main(String[] args) throws IOException {
+        int tipo = Integer.parseInt(args[0]);
+        int index = Integer.parseInt(args[1]);
+
+        long start = System.currentTimeMillis();
+        double result = SimulacionUtils.simulation(tipo);
+        long end = System.currentTimeMillis();
+
+        String fileName = "PROT_MP_" + tipo + "_n" + index + "_" + SimulacionUtils.generateTimestamp(start) + ".sim";
+        SimulacionUtils.writeSimulationResults(fileName, start, end, result);
+    }
+
+    public static void runMultiproceso(int[] cantidades) throws IOException, InterruptedException {
+        for (int tipo = 1; tipo <= 4; tipo++) {
+            for (int i = 1; i <= cantidades[tipo - 1]; i++) {
+                ProcessBuilder builder = new ProcessBuilder(
+                        "java", "-cp", "bin", "simulador.SimulacionMP", String.valueOf(tipo), String.valueOf(i));
+                builder.inheritIO();
+                Process process = builder.start();
+                process.waitFor();
+            }
+        }
+    }
+}

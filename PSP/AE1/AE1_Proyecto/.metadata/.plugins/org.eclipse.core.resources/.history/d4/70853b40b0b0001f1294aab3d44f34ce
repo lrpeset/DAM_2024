@@ -1,0 +1,82 @@
+package simulador;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class SimulacionMP {
+    public static void main(String[] args) throws IOException {
+        if (args.length < 2) {
+            System.out.println("Uso: java SimulacionMP <tipo> <modo>");
+            System.out.println("Modos disponibles: calc (simulación con cálculos), sleep (simulación con Thread.sleep)");
+            return;
+        }
+
+        int tipo = Integer.parseInt(args[0]);
+        String mode = args[1]; // calc o sleep
+        realizarSimulacion(tipo, mode, 1);
+    }
+
+    public static void realizarSimulacion(int tipo, String mode, int index) throws IOException {
+        long start = System.currentTimeMillis();
+        double result = 0;
+
+        if ("calc".equalsIgnoreCase(mode)) {
+            result = simulation(tipo); // Simulación con cálculos
+        } else if ("sleep".equalsIgnoreCase(mode)) {
+            result = simulationWithSleep(tipo); // Simulación con Thread.sleep
+        } else {
+            System.out.println("Modo no reconocido: " + mode);
+            return;
+        }
+
+        long end = System.currentTimeMillis();
+
+        String timestamp = getTimestamp(start);
+        String fileName = "PROT_" + mode.toUpperCase() + "_" + tipo + "_n" + index + "_" + timestamp + ".sim";
+        try (FileWriter writer = new FileWriter(fileName)) {
+            writer.write(timestamp + "\n");
+            writer.write(getTimestamp(end) + "\n");
+            writer.write((end - start) / 1000.0 + "\n");
+            writer.write(result + "\n");
+        }
+    }
+
+    // Simulación con cálculos intensivos
+    public static double simulation(int type) {
+        double calc = 0.0;
+        double simulationTime = Math.pow(5, type);
+        double startTime = System.currentTimeMillis();
+        double endTime = startTime + simulationTime;
+
+        System.out.println("SimulaciónMP (calc) iniciada. Tiempo objetivo: " + simulationTime + " ms");
+
+        while (System.currentTimeMillis() < endTime) {
+            calc = Math.sin(Math.pow(Math.random(), 2));
+        }
+
+        System.out.println("SimulaciónMP (calc) completada. Tiempo transcurrido: " + (System.currentTimeMillis() - startTime) + " ms");
+        return calc;
+    }
+
+    // Simulación con Thread.sleep
+    public static double simulationWithSleep(int type) {
+        double simulationTime = Math.pow(5, type);
+
+        System.out.println("SimulaciónMP (sleep) iniciada. Tiempo objetivo: " + simulationTime + " ms");
+
+        try {
+            Thread.sleep((long) simulationTime);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("SimulaciónMP (sleep) completada. Tiempo transcurrido: " + simulationTime + " ms");
+        return 0; // No hay cálculo, devuelve 0
+    }
+
+    public static String getTimestamp(long time) {
+        return new SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(new Date(time));
+    }
+}

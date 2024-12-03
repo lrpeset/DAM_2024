@@ -1,0 +1,46 @@
+package simulador;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SimulacionMT implements Runnable {
+    private final int tipo;
+    private final int index;
+
+    public SimulacionMT(int tipo, int index) {
+        this.tipo = tipo;
+        this.index = index;
+    }
+
+    @Override
+    public void run() {
+        try {
+            long start = System.currentTimeMillis();
+            double result = SimulacionUtils.simulation(tipo);
+            long end = System.currentTimeMillis();
+
+            String fileName = "PROT_MT_" + tipo + "_n" + index + "_" + SimulacionUtils.generateTimestamp(start) + ".sim";
+            SimulacionUtils.writeSimulationResults(fileName, start, end, result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void runMultihilo(int[] cantidades) {
+        List<Thread> threads = new ArrayList<>();
+        for (int tipo = 1; tipo <= 4; tipo++) {
+            for (int i = 1; i <= cantidades[tipo - 1]; i++) {
+                Thread thread = new Thread(new SimulacionMT(tipo, i));
+                threads.add(thread);
+                thread.start();
+            }
+        }
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

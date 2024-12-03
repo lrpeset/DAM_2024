@@ -1,0 +1,44 @@
+package simulador;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class SimulacionMP {
+    public static void main(String[] args) throws IOException {
+        int tipo = Integer.parseInt(args[0]);
+        realizarSimulacion(tipo, "MP", 1);
+    }
+
+    public static void realizarSimulacion(int tipo, String mode, int index) throws IOException {
+        long start = System.currentTimeMillis();
+        double result = simulation(tipo);
+        long end = System.currentTimeMillis();
+
+        String timestamp = getTimestamp(start);
+        String fileName = "PROT_" + mode + "_" + tipo + "_n" + index + "_" + timestamp + ".sim";
+        try (FileWriter writer = new FileWriter(fileName)) {
+            writer.write(timestamp + "\n");
+            writer.write(getTimestamp(end) + "\n");
+            writer.write((end - start) / 1000.0 + "\n");
+            writer.write(result + "\n");
+        }
+    }
+
+    public static double simulation(int type) {
+        double calc = 0.0;
+        double simulationTime = Math.pow(5, type);
+        double startTime = System.currentTimeMillis();
+        double endTime = startTime + simulationTime;
+
+        while (System.currentTimeMillis() < endTime) {
+            calc = Math.sin(Math.pow(Math.random(), 2));
+        }
+        return calc;
+    }
+
+    public static String getTimestamp(long time) {
+        return new SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(new Date(time));
+    }
+}

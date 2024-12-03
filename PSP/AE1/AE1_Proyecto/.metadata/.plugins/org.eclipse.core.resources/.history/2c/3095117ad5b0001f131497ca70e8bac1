@@ -1,0 +1,32 @@
+package simulador.simulacion;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class SimulacionUtils {
+    public static String generateTimestamp(long time) {
+        return new SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(new Date(time));
+    }
+
+    public static double simulation(int type) {
+        double calc = 0.0;
+        double simulationTime = Math.pow(5, type);
+        double startTime = System.currentTimeMillis();
+        double endTime = startTime + simulationTime;
+        while (System.currentTimeMillis() < endTime) {
+            calc = Math.sin(Math.pow(Math.random(), 2));
+        }
+        return calc;
+    }
+
+    public static void writeSimulationResults(String fileName, long start, long end, double result) throws IOException {
+        try (FileWriter writer = new FileWriter(fileName)) {
+            writer.write(generateTimestamp(start) + "\n");
+            writer.write(generateTimestamp(end) + "\n");
+            writer.write((end - start) / 1000.0 + "\n");
+            writer.write(result + "\n");
+        }
+    }
+}

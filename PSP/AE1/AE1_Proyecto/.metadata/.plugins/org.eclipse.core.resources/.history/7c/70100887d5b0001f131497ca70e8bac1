@@ -1,0 +1,68 @@
+package simulador.ui;
+
+import javax.swing.*;
+
+import simulador.simulacion.SimulacionMP;
+import simulador.simulacion.SimulacionMT;
+
+import java.awt.*;
+
+public class Simulador {
+    public static void main(String[] args) {
+        JFrame frame = createFrame();
+        frame.setVisible(true);
+    }
+
+    private static JFrame createFrame() {
+        JFrame frame = new JFrame("Simulador de Proteínas");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+
+        JPanel panel = new JPanel(new GridLayout(5, 2));
+        JTextField[] textFields = createInputFields(panel);
+
+        JButton simulateButton = new JButton("Iniciar Simulación");
+        panel.add(simulateButton);
+
+        simulateButton.addActionListener(e -> handleSimulation(textFields, frame));
+
+        frame.add(panel);
+        return frame;
+    }
+
+    private static JTextField[] createInputFields(JPanel panel) {
+        JTextField[] textFields = new JTextField[4];
+        String[] tipos = {"Primaria", "Secundaria", "Terciaria", "Cuaternaria"};
+
+        for (int i = 0; i < 4; i++) {
+            panel.add(new JLabel("Cantidad de " + tipos[i] + ":"));
+            textFields[i] = new JTextField("0");
+            panel.add(textFields[i]);
+        }
+        return textFields;
+    }
+
+    private static void handleSimulation(JTextField[] textFields, JFrame frame) {
+        try {
+            int[] cantidades = new int[4];
+            for (int i = 0; i < 4; i++) {
+                cantidades[i] = Integer.parseInt(textFields[i].getText());
+            }
+
+            long startTimeMP = System.currentTimeMillis();
+            SimulacionMP.runMultiproceso(cantidades);
+            long endTimeMP = System.currentTimeMillis();
+
+            long startTimeMT = System.currentTimeMillis();
+            SimulacionMT.runMultihilo(cantidades);
+            long endTimeMT = System.currentTimeMillis();
+
+            JOptionPane.showMessageDialog(frame,
+                    "Simulación terminada.\n" +
+                            "Tiempo total (Multiproceso): " + (endTimeMP - startTimeMP) / 1000.0 + " s\n" +
+                            "Tiempo total (Multihilo): " + (endTimeMT - startTimeMT) / 1000.0 + " s");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
+        }
+    }
+}

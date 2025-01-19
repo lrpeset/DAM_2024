@@ -1,0 +1,17 @@
+package com.blackjack.model;
+
+import java.util.Collections;
+import java.util.List;
+
+public class GameManager {
+    private final List<Card> deck;
+
+    public GameManager(List<Card> deck) {
+        this.deck = deck;
+        Collections.shuffle(this.deck);
+    }
+
+    public void startGame() {
+        // Implementa la lógica para alternar turnos y calcular puntuaciones
+    }
+}

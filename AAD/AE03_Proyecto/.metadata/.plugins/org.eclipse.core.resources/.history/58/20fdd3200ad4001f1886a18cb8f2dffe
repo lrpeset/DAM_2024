@@ -1,0 +1,45 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.LoginView;
+
+import javax.swing.*;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            MongoDBManager dbManager = new MongoDBManager("config.json");
+            GameController gameController = new GameController(dbManager);
+            SwingUtilities.invokeLater(() -> {
+                LoginView loginView = new LoginView();
+                loginView.setVisible(true);
+
+                loginView.addLoginListener(e -> {
+                    String username = loginView.getUsername();
+                    String password = loginView.getPassword();
+                    if (gameController.loginUser(username, password)) {
+                        JOptionPane.showMessageDialog(loginView, "Login successful!");
+                        loginView.dispose();
+                        new MainView(gameController).setVisible(true);
+                    } else {
+                        JOptionPane.showMessageDialog(loginView, "Invalid credentials. Try again.");
+                    }
+                });
+
+                loginView.addRegisterListener(e -> {
+                    String username = loginView.getUsername();
+                    String password = loginView.getPassword();
+                    if (gameController.registerUser(username, password)) {
+                        JOptionPane.showMessageDialog(loginView, "Registration successful!");
+                    } else {
+                        JOptionPane.showMessageDialog(loginView, "User already exists.");
+                    }
+                });
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error initializing the application: " + e.getMessage());
+        }
+    }
+}

@@ -1,0 +1,103 @@
+package com.blackjack.model;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class GameManager {
+    private final List<Card> deck;
+    private int playerScore;
+    private int dealerScore;
+    private List<Card> playerCards;
+    private List<Card> dealerCards;
+
+    public GameManager(List<Card> deck) {
+        this.deck = new ArrayList<>(deck);
+        Collections.shuffle(this.deck);
+        this.playerScore = 0;
+        this.dealerScore = 0;
+        this.playerCards = new ArrayList<>();
+        this.dealerCards = new ArrayList<>();
+    }
+
+    public void startGame(String deckType) {
+        playerScore = 0;
+        dealerScore = 0;
+        playerCards.clear();
+        dealerCards.clear();
+
+        dealCardToPlayer();
+        dealCardToDealer();
+        dealCardToPlayer();
+        dealCardToDealer();
+
+        System.out.println("Player's cards: " + playerCards);
+        System.out.println("Dealer's cards: " + dealerCards.get(0) + " and one hidden card.");
+    }
+
+    public void dealCardToPlayer() {
+        Card card = deck.remove(0);
+        playerCards.add(card);
+        playerScore += card.getPoints();
+    }
+
+    public void dealCardToDealer() {
+        Card card = deck.remove(0);
+        dealerCards.add(card);
+        dealerScore += card.getPoints();
+    }
+
+    public void playerHit() {
+        dealCardToPlayer();
+        System.out.println("Player hits and draws: " + playerCards.get(playerCards.size() - 1));
+        System.out.println("Player's current score: " + playerScore);
+
+        if (playerScore > 21) {
+            System.out.println("Player busts! Dealer wins.");
+        }
+    }
+
+    public void dealerHit() {
+        while (dealerScore < 17) {
+            dealCardToDealer();
+            System.out.println("Dealer hits and draws: " + dealerCards.get(dealerCards.size() - 1));
+            System.out.println("Dealer's current score: " + dealerScore);
+        }
+    }
+
+    public void stand() {
+        System.out.println("Player stands.");
+        dealerHit();
+
+        System.out.println("Dealer's final hand: " + dealerCards);
+        System.out.println("Player's final hand: " + playerCards);
+        System.out.println("Dealer's final score: " + dealerScore);
+        System.out.println("Player's final score: " + playerScore);
+
+        if (dealerScore > 21) {
+            System.out.println("Dealer busts! Player wins.");
+        } else if (dealerScore > playerScore) {
+            System.out.println("Dealer wins.");
+        } else if (dealerScore < playerScore) {
+            System.out.println("Player wins.");
+        } else {
+            System.out.println("It's a tie.");
+        }
+    }
+
+    public int getPlayerScore() {
+        return playerScore;
+    }
+
+    public int getDealerScore() {
+        return dealerScore;
+    }
+
+    public List<Card> getPlayerCards() {
+        return playerCards;
+    }
+
+    public List<Card> getDealerCards() {
+        return dealerCards;
+    }
+}

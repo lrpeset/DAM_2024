@@ -1,0 +1,43 @@
+package com.blackjack.model;
+
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class ScoreManager {
+    private final MongoCollection<Document> scoresCollection;
+
+    public ScoreManager(MongoDBManager dbManager) {
+        this.scoresCollection = dbManager.getDatabase().getCollection("scores");
+    }
+
+    /**
+     * Guarda una puntuación en la base de datos.
+     *
+     * @param username  Nombre del usuario.
+     * @param deckType  Tipo de baraja utilizada (es o fr).
+     * @param points    Puntuación obtenida.
+     */
+    public void saveScore(String username, String deckType, int points) {
+        String timestamp = getCurrentTimestamp();
+        Document score = new Document("user", username)
+                .append("suit", deckType)
+                .append("points", points)
+                .append("timestamp", timestamp);
+
+        scoresCollection.insertOne(score);
+        System.out.println("Puntuación guardada con éxito.");
+    }
+
+    /**
+     * Devuelve la fecha y hora actual en formato ISO.
+     *
+     * @return Timestamp como string.
+     */
+    private String getCurrentTimestamp() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return LocalDateTime.now().format(formatter);
+    }
+}

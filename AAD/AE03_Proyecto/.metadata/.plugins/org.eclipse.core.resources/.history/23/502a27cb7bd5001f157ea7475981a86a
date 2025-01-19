@@ -1,0 +1,25 @@
+package com.blackjack.model;
+
+public class Card {
+    private String suit;
+    private int points;
+    private String base64;
+
+    public Card(String suit, int points, String base64) {
+        this.suit = suit;
+        this.points = points;
+        this.base64 = base64;
+    }
+
+    public String getSuit() {
+        return suit;
+    }
+
+    public int getPoints() {
+        return points;
+    }
+
+    public String getBase64() {
+        return base64;
+    }
+}

@@ -1,0 +1,36 @@
+package com.blackjack.controller;
+
+import com.blackjack.model.MongoDBManager;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class LeaderboardController {
+    private final MongoCollection<Document> scoresCollection;
+
+    public LeaderboardController(MongoDBManager dbManager) {
+        this.scoresCollection = dbManager.getDatabase().getCollection("scores");
+    }
+
+    public List<Document> getLeaderboard() {
+        List<Document> leaderboard = new ArrayList<>();
+        for (Document doc : scoresCollection.find().sort(new Document("points", -1))) {
+            leaderboard.add(doc);
+        }
+        return leaderboard;
+    }
+
+    public void displayLeaderboard() {
+        List<Document> leaderboard = getLeaderboard();
+        System.out.println("Clasificación:");
+        for (Document entry : leaderboard) {
+            System.out.printf("Usuario: %s | Puntos: %d | Baraja: %s | Fecha: %s%n",
+                entry.getString("user"),
+                entry.getInteger("points"),
+                entry.getString("suit"),
+                entry.getString("timestamp"));
+        }
+    }
+}

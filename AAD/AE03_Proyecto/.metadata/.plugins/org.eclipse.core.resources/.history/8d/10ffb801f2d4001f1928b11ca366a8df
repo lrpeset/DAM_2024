@@ -1,0 +1,12 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.view.MainView;
+
+public class App {
+    public static void main(String[] args) {
+        GameController controller = new GameController();
+        MainView view = new MainView(controller);
+        controller.setMainView(view);
+    }
+}

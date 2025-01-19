@@ -1,0 +1,16 @@
+package com.blackjack.controller;
+
+import com.blackjack.view.MainView;
+
+public class MainController {
+    private MainView view;
+
+    public MainController() {
+        this.view = new MainView();
+        initListeners();
+    }
+
+    private void initListeners() {
+        // Añadir listeners para los botones de la vista
+    }
+}

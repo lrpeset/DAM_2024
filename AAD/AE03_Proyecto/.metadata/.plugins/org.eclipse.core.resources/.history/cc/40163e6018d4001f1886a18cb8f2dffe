@@ -1,0 +1,69 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+import com.blackjack.view.RegisterView;
+
+import javax.swing.*;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            MongoDBManager dbManager = new MongoDBManager("db_config.json");
+            GameController controller = new GameController(dbManager);
+            MainView mainView = new MainView();
+
+            // Acción para el botón Register
+            mainView.getRegisterButton().addActionListener(e -> {
+                RegisterView registerView = new RegisterView();
+                registerView.setVisible(true);
+
+                registerView.addOkButtonListener(okEvent -> {
+                    String username = registerView.getUsername();
+                    String password = registerView.getPassword();
+                    String repeatedPassword = registerView.getRepeatedPassword();
+
+                    if (!password.equals(repeatedPassword)) {
+                        JOptionPane.showMessageDialog(registerView, "Passwords do not match!");
+                        return;
+                    }
+
+                    try {
+                        if (controller.registerUser(username, password)) {
+                            JOptionPane.showMessageDialog(registerView, "User registered successfully!");
+                            registerView.dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(registerView, "User already exists!");
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                });
+
+                registerView.addCancelButtonListener(cancelEvent -> registerView.dispose());
+            });
+
+            // Acción para el botón Login
+            mainView.getLoginButton().addActionListener(e -> {
+                String username = JOptionPane.showInputDialog("Enter username:");
+                String password = JOptionPane.showInputDialog("Enter password:");
+
+                try {
+                    if (controller.loginUser(username, password)) {
+                        JOptionPane.showMessageDialog(mainView, "Login successful!");
+                        mainView.updateLoginButtonState(true);
+                    } else {
+                        JOptionPane.showMessageDialog(mainView, "Invalid credentials!");
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+
+            mainView.setVisible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

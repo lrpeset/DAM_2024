@@ -1,0 +1,445 @@
+package com.blackjack.controller;
+
+import java.awt.Image;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Random;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.Timer;
+
+import org.bson.Document;
+
+import com.blackjack.model.Card;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.LoginView;
+import com.blackjack.view.MainView;
+import com.blackjack.view.RegisterView;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+public class GameController {
+    public MongoDBManager dbManager;
+    private boolean isUserLoggedIn;
+    private MainView mainView;
+    private List<Card> CrupierHand = new ArrayList<>();
+    private List<Card> UserHand = new ArrayList<>();
+    private boolean isPlayerTurn = true;
+    private boolean isGameOver = false;
+
+    public GameController(MongoDBManager dbManager, MainView mainView) {
+        this.dbManager = dbManager;
+        this.isUserLoggedIn = false;
+        this.mainView = mainView;
+    }
+
+    public void showRegisterView() {
+        RegisterView registerView = new RegisterView();
+        registerView.setVisible(true);
+        registerView.addOkButtonListener(okEvent -> handleRegister(registerView));
+        registerView.addCancelButtonListener(cancelEvent -> registerView.dispose());
+    }
+
+    private void handleRegister(RegisterView registerView) {
+        String username = registerView.getUsername();
+        String password = registerView.getPassword();
+        String repeatedPassword = registerView.getRepeatedPassword();
+
+        if (!password.equals(repeatedPassword)) {
+            registerView.showMessage("Passwords do not match!");
+            return;
+        }
+
+        if (registerUser(username, password)) {
+            registerView.showMessage("User registered successfully!");
+            registerView.dispose();
+        } else {
+            registerView.showMessage("User already exists!");
+        }
+    }
+
+    public boolean registerUser(String username, String password) {
+        try {
+            return dbManager.registerUser(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void loginAction(MainView mainView) {
+        LoginView loginView = new LoginView();
+        loginView.addLoginButtonListener(e -> handleLogin(loginView, mainView));
+        loginView.addCancelButtonListener(e -> loginView.dispose());
+        loginView.setVisible(true);
+    }
+
+    private void handleLogin(LoginView loginView, MainView mainView) {
+        String username = loginView.getUsername();
+        String password = loginView.getPassword();
+
+        if (loginUser(username, password)) {
+            mainView.updateLoginButtonState(true);
+            loginView.dispose();
+            mainView.showMessage("Login successful!");
+        } else {
+            mainView.showMessage("Invalid credentials!");
+        }
+    }
+
+    public boolean loginUser(String username, String password) {
+        try {
+            boolean loginSuccess = dbManager.loginUser(username, password);
+            if (loginSuccess) {
+                isUserLoggedIn = true;
+            }
+            return loginSuccess;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void logoutAction(MainView mainView) {
+        isUserLoggedIn = false;
+        mainView.updateLoginButtonState(false);
+    }
+
+    public boolean isUserLoggedIn() {
+        return isUserLoggedIn;
+    }
+
+    public void handleLoadCards(String cardLan) {
+        try {
+            dbManager.resetCardsCollection(cardLan);
+            dbManager.loadCardsIntoCollection(cardLan);
+            System.out.println("Cartas cargadas exitosamente para la versión " + cardLan);
+        } catch (Exception e) {
+            e.printStackTrace();
+            mainView.showMessage("Error al cargar cartas: " + e.getMessage());
+        }
+    }
+
+    public void onStartButtonPressed() {
+        try {
+            isGameOver = false;
+            resetGame();
+            int choice = mainView.showPlayerSelectionDialog();
+
+            if (choice == JOptionPane.CLOSED_OPTION) {
+                return;
+            }
+
+            if (choice == 0) {
+                mainView.showMessage("Comienza el crupier, buena suerte.");
+                isPlayerTurn = false;
+                startCrupierTurn();
+            } else if (choice == 1) {
+                mainView.showMessage("Comienza el jugador, buena suerte.");
+                isPlayerTurn = true;
+                playerTurn();
+            } else {
+                System.out.println("Selección no válida.");
+                return;
+            }
+
+            String selectedCollection = determineCardCollection();
+            if (selectedCollection == null) {
+                return;
+            }
+
+        } catch (Exception e) {
+            System.out.println("Ocurrió un error al comenzar el turn: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    private void resetGame() {
+        mainView.cardSlot1.setIcon(null);
+        mainView.cardSlot2.setIcon(null);
+        CrupierHand.clear();
+        UserHand.clear();
+        mainView.newCardButton.setEnabled(true);
+        mainView.standButton.setEnabled(true);
+    }
+
+    private String determineCardCollection() {
+        MongoDatabase database = dbManager.getDatabase();
+        if (database.listCollectionNames().into(new ArrayList<>()).contains(dbManager.cardsEsCollection)) {
+            return dbManager.cardsEsCollection;
+        } else if (database.listCollectionNames().into(new ArrayList<>()).contains(dbManager.cardsFrCollection)) {
+            return dbManager.cardsFrCollection;
+        }
+        System.out.println("Ninguna colección válida encontrada.");
+        return null;
+    }
+
+    private void loadRandomCardFromCollection(MongoCollection<Document> collection, int choice) {
+        long count = collection.countDocuments();
+        int randomIndex = new Random().nextInt((int) count);
+        Document document = collection.find().skip(randomIndex).first();
+
+        if (document != null) {
+            String suit = document.getString("suit");
+            int points = document.getInteger("points");
+            String base64 = document.getString("base64");
+
+            Card card = new Card(suit, points, base64);
+            displayCardInSlot(card, choice);
+        }
+    }
+
+    private Image decodeImage(byte[] imageBytes) {
+        try {
+            ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes);
+            return ImageIO.read(bis);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void updateScore() {
+        updatePlayerScore(CrupierHand, mainView.scoreSlot1);
+        updatePlayerScore(UserHand, mainView.scoreSlot2);
+    }
+
+    private void updatePlayerScore(List<Card> hand, JLabel scoreSlot) {
+        int score = 0;
+        for (Card card : hand) {
+            score += card.getPoints();
+        }
+        scoreSlot.setText("Score: " + score);
+    }
+
+
+    public void drawCardForPlayer() {
+        if (isGameOver) {
+            mainView.showMessage("El juego ha terminado. Inicia un nuevo juego.");
+            return;
+        }
+
+        String selectedCollection = determineCardCollection();
+        if (selectedCollection == null)
+            return;
+
+        MongoCollection<Document> collection = dbManager.getDatabase().getCollection(selectedCollection);
+        if (collection.countDocuments() == 0) {
+            System.out.println("La colección está vacía.");
+            return;
+        }
+
+        loadRandomCardFromCollection(collection, 1);
+        updateScore();
+
+        if (getUserPoints() > 21) {
+            mainView.showMessage("El jugador se ha pasado de 21. El crupier gana.");
+            isGameOver = true;
+            mainView.newCardButton.setEnabled(false);
+            mainView.standButton.setEnabled(false);
+            determineWinner();  // Llamada directa al final del turno si el jugador se pasa de 21
+        } else {
+            switchTurn();
+        }
+    }
+
+
+    public void onStandButtonPress() {
+        if (isPlayerTurn) {
+            isPlayerTurn = false;
+            mainView.showMessage("El jugador se ha plantado.");
+            switchTurn();
+        }
+    }
+
+
+    private void startCrupierTurn() {
+        // Deshabilitar botones de la interfaz mientras el crupier toma su turno.
+        mainView.newCardButton.setEnabled(false);
+        mainView.standButton.setEnabled(false);
+
+        // Si el crupier tiene 16 puntos o menos, roba una carta
+        if (getCrupierPoints() <= 16 && !isGameOver) {
+            mainView.showMessage("El crupier roba una carta.");
+
+            String selectedCollection = determineCardCollection();
+            if (selectedCollection == null) return;
+
+            MongoCollection<Document> collection = dbManager.getDatabase().getCollection(selectedCollection);
+            if (collection.countDocuments() == 0) {
+                System.out.println("La colección está vacía.");
+                return;
+            }
+
+            // Realizar el robo de carta
+            Timer timer = new Timer(1000, e -> {
+                loadRandomCardFromCollection(collection, 0);  // Robar una carta
+                updateScore();
+
+                // Verificar si el crupier se pasa de 21 puntos
+                if (getCrupierPoints() > 21) {
+                    mainView.showMessage("El crupier se ha pasado de 21. El jugador gana.");
+                    isGameOver = true;
+                    mainView.newCardButton.setEnabled(false);
+                    mainView.standButton.setEnabled(false);
+                    determineWinner();  // Llamar a determineWinner si el crupier se pasa
+                } else {
+                    // Si el crupier no se pasa de 21, alternar el turno al jugador
+                    switchTurn();
+                }
+            });
+
+            timer.setRepeats(false);
+            timer.start();
+
+        } else if (getCrupierPoints() > 16) {
+            // Si el crupier tiene más de 17 puntos, se planta
+            mainView.showMessage("El crupier se planta con " + getCrupierPoints() + " puntos.");
+            switchTurn();  // Pasa el turno al jugador
+        }
+    }
+
+
+
+    private void switchTurn() {
+        if (isPlayerTurn) {
+            isPlayerTurn = false;
+            mainView.showMessage("Es el turno del crupier.");
+            startCrupierTurn();
+        } else {
+            isPlayerTurn = true;
+            mainView.showMessage("Es el turno del jugador.");
+        }
+    }
+
+    
+    
+    private void determineWinner() {
+        int userPoints = getUserPoints();
+        int crupierPoints = getCrupierPoints();
+
+        if (userPoints > 21) {
+            mainView.showMessage("El jugador se ha pasado de 21. El crupier gana.");
+        } else if (crupierPoints > 21) {
+            mainView.showMessage("El crupier se ha pasado de 21. El jugador gana.");
+        } else if (userPoints > crupierPoints) {
+            mainView.showMessage("El jugador gana con " + userPoints + " puntos.");
+        } else if (userPoints < crupierPoints) {
+            mainView.showMessage("El crupier gana con " + crupierPoints + " puntos.");
+        } else {
+            mainView.showMessage("Empate con " + userPoints + " puntos.");
+        }
+
+        isGameOver = true;
+        mainView.newCardButton.setEnabled(false);
+        mainView.standButton.setEnabled(false);
+    }
+
+
+
+    private void playerTurn() {
+    	mainView.newCardButton.setEnabled(true);
+        mainView.standButton.setEnabled(true);
+    }
+
+
+    private void displayCardInSlot(Card card, int choice) {
+        byte[] imageBytes = Base64.getDecoder().decode(card.getBase64());
+        Image image = decodeImage(imageBytes);
+
+        if (image != null) {
+            if (choice == 0) { // Crupier's turn
+                setCardImage(mainView.cardSlot1, card.getBase64());
+                CrupierHand.add(card);
+
+                if (card.getPoints() == 1) { // Es un As
+                    if (getCrupierPoints() + 11 <= 21) {
+                        card.setPoints(11); // Cuenta como 11
+                    } else {
+                        card.setPoints(1); // Cuenta como 1
+                    }
+                }
+
+            } else if (choice == 1) { // User's turn
+                setCardImage(mainView.cardSlot2, card.getBase64());
+                UserHand.add(card);
+
+                if (card.getPoints() == 1) { // Es un As
+                    handleAceForUser(card);
+                }
+            }
+            updateScore();
+        } else {
+            System.out.println("Error al decodificar la imagen.");
+        }
+    }
+    
+    private void handleAceForUser(Card card) {
+        String[] options = {"1", "11"};
+        int choice = JOptionPane.showOptionDialog(
+                mainView, 
+                "Has robado un As. ¿Qué valor quieres asignar?", 
+                "Selecciona valor para el As", 
+                JOptionPane.DEFAULT_OPTION, 
+                JOptionPane.QUESTION_MESSAGE, 
+                null, 
+                options, 
+                options[0]
+        );
+
+        if (choice == 0) { // Opción "1"
+            card.setPoints(1);
+        } else if (choice == 1) { // Opción "11"
+            card.setPoints(11);
+        }
+    }
+
+
+    private void setCardImage(JLabel cardSlot, String base64Image) {
+        if (cardSlot.getWidth() == 0 || cardSlot.getHeight() == 0) {
+            System.err.println("Tamaño de cardSlot no válido.");
+            return;
+        }
+
+        try {
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+            ImageIcon originalIcon = new ImageIcon(imageBytes);
+
+            Image scaledImage = originalIcon.getImage().getScaledInstance(cardSlot.getWidth(), cardSlot.getHeight(),
+                    Image.SCALE_SMOOTH);
+
+            cardSlot.setIcon(new ImageIcon(scaledImage));
+            cardSlot.revalidate();
+            cardSlot.repaint();
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error al decodificar la imagen: " + e.getMessage());
+        }
+    }
+
+    private int getUserPoints() {
+        return getTotalPoints(UserHand);
+    }
+
+    private int getCrupierPoints() {
+        return getTotalPoints(CrupierHand);
+    }
+
+    private int getTotalPoints(List<Card> hand) {
+        int score = 0;
+        for (Card card : hand) {
+            score += card.getPoints();
+        }
+        return score;
+    }
+
+    public void setMainView(MainView mainView) {
+        this.mainView = mainView;
+    }
+    
+}

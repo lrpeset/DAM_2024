@@ -1,0 +1,19 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+
+public class App {
+	public static void main(String[] args) {
+		try {
+			MongoDBManager dbManager = new MongoDBManager("db_config.json");
+			GameController controller = new GameController(dbManager);
+			MainView mainView = new MainView(controller);
+
+			mainView.setVisible(true);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}

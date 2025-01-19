@@ -1,0 +1,296 @@
+package com.blackjack.model;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.view.LoginView;
+import com.blackjack.view.MainView;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HexFormat;
+
+/**
+ * This class manages the interaction with MongoDB, handling operations
+ * like user registration, login, managing card collections, and saving
+ * user scores.
+ */
+public class MongoDBManager {
+
+    private MongoClient client;
+    private MongoDatabase database;
+    public String cardsEsCollection;
+    public String cardsFrCollection;
+    private String usersCollection;
+    private String scoresCollection;
+    
+    @SuppressWarnings("unused")
+    private GameController controller;
+    
+    @SuppressWarnings("unused")
+    private MainView mainView;
+    
+    @SuppressWarnings("unused")
+    private LoginView loginView;
+    
+    private String activeUsername;
+
+    /**
+     * Sets the active username for the session.
+     * @param username The username of the active player.
+     */
+    public void setActiveUsername(String username) {
+        this.activeUsername = username;
+    }
+
+    /**
+     * Gets the active username.
+     * @return The active username.
+     */
+    public String getActiveUsername() {
+        return activeUsername;
+    }
+
+    /**
+     * Sets the main view to interact with the UI.
+     * @param mainView The main view instance.
+     */
+    public void setMainView(MainView mainView) {
+        this.mainView = mainView;
+    }
+
+    /**
+     * Sets the login view to interact with the login screen.
+     * @param loginView The login view instance.
+     */
+    public void setLoginView(LoginView loginView) {
+        this.loginView = loginView;
+    }
+
+    /**
+     * Constructor that initializes MongoDB connection based on configuration file.
+     * @param configFile The path to the configuration file.
+     * @throws Exception If there is an error reading the config or connecting to MongoDB.
+     */
+    public MongoDBManager(String configFile) throws Exception {
+        String json = new String(Files.readAllBytes(Paths.get(configFile)));
+        Document config = Document.parse(json);
+
+        String ip = config.getString("ip");
+        String port = config.getString("port");
+        String databaseName = config.getString("database");
+
+        String connectionString = String.format("mongodb://%s:%s/%s", ip, port, databaseName);
+        client = MongoClients.create(connectionString);
+        database = client.getDatabase(databaseName);
+
+        Document collections = config.get("collections", Document.class);
+        this.cardsEsCollection = collections.getString("cards_es");
+        this.cardsFrCollection = collections.getString("cards_fr");
+        this.usersCollection = collections.getString("users");
+        this.scoresCollection = collections.getString("scores");
+
+        System.out.println("Connected to database: " + databaseName);
+        System.out.println("Using collections: ");
+        System.out.println("  Spanish cards: " + cardsEsCollection);
+        System.out.println("  French cards: " + cardsFrCollection);
+        System.out.println("  Users: " + usersCollection);
+        System.out.println("  Scores: " + scoresCollection);
+    }
+
+    /**
+     * Registers a new user in the MongoDB database.
+     * @param username The username of the new user.
+     * @param password The password for the new user.
+     * @return True if the registration is successful, false if the user already exists.
+     */
+    public boolean registerUser(String username, String password) {
+        MongoCollection<Document> collection = database.getCollection(usersCollection);
+        if (userExists(collection, username)) {
+            return false;
+        }
+
+        String hashedPassword = hashPassword(password);
+        Document newUser = new Document("username", username).append("password", hashedPassword);
+        collection.insertOne(newUser);
+        return true;
+    }
+
+    /**
+     * Logs a user into the system by verifying their credentials.
+     * @param username The username of the user.
+     * @param password The password of the user.
+     * @return True if the login is successful, false if the credentials are incorrect.
+     */
+    public boolean loginUser(String username, String password) {
+        MongoCollection<Document> collection = database.getCollection(usersCollection);
+        Document user = collection.find(new Document("username", username)).first();
+        boolean isValid = user != null && hashPassword(password).equals(user.getString("password"));
+
+        if (isValid) {
+            // Set the active username
+            setActiveUsername(username);
+        }
+        return isValid;
+    }
+
+    /**
+     * Checks if a user exists in the database.
+     * @param collection The collection to check for the user.
+     * @param username The username to search for.
+     * @return True if the user exists, false otherwise.
+     */
+    private boolean userExists(MongoCollection<Document> collection, String username) {
+        return collection.find(new Document("username", username)).first() != null;
+    }
+
+    /**
+     * Hashes a password using SHA-256.
+     * @param password The password to hash.
+     * @return The hashed password.
+     */
+    private String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes());
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            throw new RuntimeException("Error hashing password", e);
+        }
+    }
+
+    /**
+     * Resets the cards collection based on the given card suit (ES or FR).
+     * @param cardSuit The suit of the cards to reset (ES or FR).
+     */
+    public void resetCardsCollection(String cardSuit) {
+        try {
+            String targetCollection = getTargetCollection(cardSuit);
+            dropCollectionIfExists(cardsEsCollection);
+            dropCollectionIfExists(cardsFrCollection);
+            database.createCollection(targetCollection);
+            System.out.println("Collection " + targetCollection + " created.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error managing card collections: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Loads cards from the file system into the MongoDB collection based on the card suit.
+     * @param cardSuit The suit of the cards to load (ES or FR).
+     */
+    public void loadCardsIntoCollection(String cardSuit) {
+        try {
+            String folderPath = "img/" + (cardSuit.equalsIgnoreCase("ES") ? "cards_es" : "cards_fr");
+            File folder = new File(folderPath);
+
+            if (!folder.exists() || !folder.isDirectory()) {
+                throw new RuntimeException("Folder " + folderPath + " does not exist or is not a directory.");
+            }
+
+            String targetCollection = cardSuit.equalsIgnoreCase("ES") ? cardsEsCollection : cardsFrCollection;
+            MongoCollection<Document> collection = database.getCollection(targetCollection);
+
+            File[] files = folder.listFiles((dir, name) -> name.endsWith(".jpg") || name.endsWith(".png"));
+            if (files == null || files.length == 0) {
+                throw new RuntimeException("No .jpg files found in the folder " + folderPath);
+            }
+
+            for (File file : files) {
+                String fileName = file.getName().replaceAll("\\.jpg$|\\.png$", "");
+                String[] parts = fileName.split("_");
+                if (parts.length != 2) {
+                    throw new RuntimeException("Invalid file format: " + fileName);
+                }
+
+                String suit = parts[0];
+                int points = Integer.parseInt(parts[1]);
+                if (points > 10) {
+                    points = 10;
+                }
+
+                String base64Image = encodeFileToBase64(file);
+
+                Document card = new Document("suit", suit).append("points", points).append("base64", base64Image);
+
+                collection.insertOne(card);
+            }
+
+            long count = collection.countDocuments();
+            System.out.println("Number of cards inserted into " + targetCollection + ": " + count);
+            if (count == 0) {
+                System.out.println("No cards were inserted into the collection.");
+            } else {
+                System.out.println("Cards have been inserted into the collection " + targetCollection);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error loading cards into collection: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Drops a MongoDB collection if it exists.
+     * @param collectionName The name of the collection to drop.
+     */
+    private void dropCollectionIfExists(String collectionName) {
+        if (database.listCollectionNames().into(new ArrayList<String>()).contains(collectionName)) {
+            database.getCollection(collectionName).drop();
+            System.out.println("Collection " + collectionName + " dropped.");
+        }
+    }
+
+    /**
+     * Returns the target collection name based on the card suit.
+     * @param cardSuit The suit of the cards (ES or FR).
+     * @return The name of the collection.
+     */
+    private String getTargetCollection(String cardSuit) {
+        if ("ES".equalsIgnoreCase(cardSuit)) {
+            return cardsEsCollection;
+        } else if ("FR".equalsIgnoreCase(cardSuit)) {
+            return cardsFrCollection;
+        } else {
+            throw new IllegalArgumentException("Invalid card suit: " + cardSuit);
+        }
+    }
+
+    /**
+     * Encodes a file to a Base64 string.
+     * @param file The file to encode.
+     * @return The Base64 encoded string of the file.
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
+    private String encodeFileToBase64(File file) throws IOException {
+        byte[] fileContent = Files.readAllBytes(file.toPath());
+        return Base64.getEncoder().encodeToString(fileContent);
+    }
+
+    /**
+     * Saves a user's score to the MongoDB database.
+     * @param username The username of the player.
+     * @param score The score achieved by the player.
+     * @param timestamp The timestamp of when the game ended.
+     * @param cardSuit The suit of cards used ('es' for Spanish or 'fr' for French).
+     */
+    public void saveUserScore(String username, int score, String cardSuit, String timestamp) {
+        MongoCollection<Document> collection = database.getCollection(scoresCollection);
+        Document scoreDoc = new Document("username", username)
+                .append("score", score)
+                .append("cardSuit", cardSuit)
+                .append("timestamp", timestamp);
+        collection.insertOne(scoreDoc);
+    }
+}

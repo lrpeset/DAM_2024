@@ -1,0 +1,176 @@
+package com.blackjack.model;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.List;
+
+public class MongoDBManager {
+    private MongoClient client;
+    private MongoDatabase database;
+    public String cardsEsCollection;
+    public String cardsFrCollection;
+    private String usersCollection;
+    private String scoresCollection;
+
+    public MongoDBManager(String configFile) throws Exception {
+        String json = new String(Files.readAllBytes(Paths.get(configFile)));
+        Document config = Document.parse(json);
+
+        String ip = config.getString("ip");
+        String port = config.getString("port");
+        String databaseName = config.getString("database");
+
+        String connectionString = String.format("mongodb://%s:%s/%s", ip, port, databaseName);
+        client = MongoClients.create(connectionString);
+        database = client.getDatabase(databaseName);
+
+        Document collections = config.get("collections", Document.class);
+        this.cardsEsCollection = collections.getString("cards_es");
+        this.cardsFrCollection = collections.getString("cards_fr");
+        this.usersCollection = collections.getString("users");
+        this.scoresCollection = collections.getString("scores");
+
+        System.out.println("Connected to database: " + databaseName);
+        System.out.println("Using collections: ");
+        System.out.println("  Spanish cards: " + cardsEsCollection);
+        System.out.println("  French cards: " + cardsFrCollection);
+        System.out.println("  Users: " + usersCollection);
+        System.out.println("  Scores: " + scoresCollection);
+    }
+
+    public boolean registerUser(String username, String password) {
+        MongoCollection<Document> collection = database.getCollection(usersCollection);
+        if (userExists(collection, username)) {
+            return false;
+        }
+
+        String hashedPassword = hashPassword(password);
+        Document newUser = new Document("username", username).append("password", hashedPassword);
+        collection.insertOne(newUser);
+        return true;
+    }
+
+    public boolean loginUser(String username, String password) {
+        MongoCollection<Document> collection = database.getCollection(usersCollection);
+        Document user = collection.find(new Document("username", username)).first();
+        return user != null && hashPassword(password).equals(user.getString("password"));
+    }
+
+    private boolean userExists(MongoCollection<Document> collection, String username) {
+        return collection.find(new Document("username", username)).first() != null;
+    }
+
+    private String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes());
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            throw new RuntimeException("Error hashing password", e);
+        }
+    }
+
+    public void resetCardsCollection(String cardSuit) {
+        try {
+            String targetCollection = getTargetCollection(cardSuit);
+            dropCollectionIfExists(cardsEsCollection);
+            dropCollectionIfExists(cardsFrCollection);
+            database.createCollection(targetCollection);
+            System.out.println("Colección " + targetCollection + " creada.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al gestionar las colecciones de cartas: " + e.getMessage());
+        }
+    }
+
+    public void loadCardsIntoCollection(String cardSuit) {
+        try {
+            String folderPath = "img/" + (cardSuit.equalsIgnoreCase("ES") ? "cards_es" : "cards_fr");
+            File folder = new File(folderPath);
+
+            if (!folder.exists() || !folder.isDirectory()) {
+                throw new RuntimeException("La carpeta " + folderPath + " no existe o no es un directorio.");
+            }
+
+            String targetCollection = cardSuit.equalsIgnoreCase("ES") ? cardsEsCollection : cardsFrCollection;
+            MongoCollection<Document> collection = database.getCollection(targetCollection);
+
+            File[] files = folder.listFiles((dir, name) -> name.endsWith(".jpg") || name.endsWith(".png"));
+            if (files == null || files.length == 0) {
+                throw new RuntimeException("No se encontraron archivos .jpg en la carpeta " + folderPath);
+            }
+
+            for (File file : files) {
+                String fileName = file.getName().replaceAll("\\.jpg$|\\.png$", "");
+                String[] parts = fileName.split("_");
+                if (parts.length != 2) {
+                    throw new RuntimeException("Formato de archivo inválido: " + fileName);
+                }
+
+                String suit = parts[0];
+                int points = Integer.parseInt(parts[1]);
+                if (points > 10) {
+                    points = 10;
+                }
+
+                String base64Image = encodeFileToBase64(file);
+
+                Document card = new Document("suit", suit)
+                        .append("points", points)
+                        .append("base64", base64Image);
+
+                collection.insertOne(card);
+            }
+
+            long count = collection.countDocuments();
+            System.out.println("Número de cartas insertadas en " + targetCollection + ": " + count);
+            if (count == 0) {
+                System.out.println("No se insertaron cartas en la colección.");
+            } else {
+                System.out.println("Se insertaron las cartas en la colección " + targetCollection);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al cargar cartas en la colección: " + e.getMessage());
+        }
+    }
+
+    private void dropCollectionIfExists(String collectionName) {
+        if (database.listCollectionNames().into(new ArrayList<String>()).contains(collectionName)) {
+            database.getCollection(collectionName).drop();
+            System.out.println("Colección " + collectionName + " eliminada.");
+        }
+    }
+
+    private String getTargetCollection(String cardSuit) {
+        if ("ES".equalsIgnoreCase(cardSuit)) {
+            return cardsEsCollection;
+        } else if ("FR".equalsIgnoreCase(cardSuit)) {
+            return cardsFrCollection;
+        } else {
+            throw new IllegalArgumentException("Card suit no válida: " + cardSuit);
+        }
+    }
+
+    private String encodeFileToBase64(File file) throws IOException {
+        byte[] fileContent = Files.readAllBytes(file.toPath());
+        return Base64.getEncoder().encodeToString(fileContent);
+    }
+
+    public MongoDatabase getDatabase() {
+        return this.database;
+    }
+}

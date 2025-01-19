@@ -1,0 +1,149 @@
+package com.blackjack.view;
+
+import javax.swing.*;
+import java.util.List;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.Card;
+
+public class MainView extends JFrame implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private JButton loadCardsButton;
+    private JButton registerButton;
+    private JButton loginButton;
+    private JComboBox<String> cardLanSelector;
+    private JButton startButton;
+    private JButton saveButton;
+    private JButton hallOfFameButton;
+    private JButton logoutButton;
+    public JLabel cardSlot1;
+    public JLabel cardSlot2;
+    private GameController gameController;
+    
+    public MainView(GameController controller) {
+        this.gameController = controller;
+    	
+    	
+        setTitle("Blackjack");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        JPanel topPanel = createTopPanel();
+        JPanel centerPanel = createCenterPanel();
+        JPanel bottomPanel = createBottomPanel();
+
+        add(topPanel, BorderLayout.NORTH);
+        add(centerPanel, BorderLayout.CENTER);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        registerButton.addActionListener(e -> controller.showRegisterView());
+        loginButton.addActionListener(e -> controller.loginAction(this));
+        logoutButton.addActionListener(e -> controller.logoutAction(this));
+        loadCardsButton.addActionListener(e -> controller.handleLoadCards(getSelectedCardLan()));
+        //
+        startButton.addActionListener(e -> controller.onStartButtonPressed());
+    }
+    private JPanel createTopPanel() {
+        JPanel topPanel = new JPanel(new FlowLayout());
+        loadCardsButton = new JButton("Load Cards");
+        registerButton = new JButton("Register");
+        loginButton = new JButton("Login");
+        cardLanSelector = new JComboBox<>(new String[] { "ES", "FR" });
+        startButton = new JButton("Start");
+        saveButton = new JButton("Save");
+        hallOfFameButton = new JButton("Hall of Fame");
+        logoutButton = new JButton("Logout");
+
+        topPanel.add(loadCardsButton);
+        topPanel.add(registerButton);
+        topPanel.add(loginButton);
+        topPanel.add(cardLanSelector);
+        topPanel.add(startButton);
+        topPanel.add(saveButton);
+        topPanel.add(hallOfFameButton);
+        topPanel.add(logoutButton);
+
+        return topPanel;
+    }
+
+    private JPanel createCenterPanel() {
+        JPanel centerPanel = new JPanel(new GridLayout(1, 2));
+
+        JPanel crupierPanel = createCardPanel("CRUPIER");
+        JPanel playerPanel = createCardPanel("PLAYER");
+
+        centerPanel.add(crupierPanel);
+        centerPanel.add(playerPanel);
+
+        return centerPanel;
+    }
+
+    private JPanel createCardPanel(String labelText) {
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel(labelText, SwingConstants.CENTER);
+        panel.add(label, BorderLayout.NORTH);
+
+        JLabel cardSlot = new JLabel();
+        cardSlot.setHorizontalAlignment(SwingConstants.CENTER);
+        cardSlot.setVerticalAlignment(SwingConstants.CENTER);
+        cardSlot.setPreferredSize(new Dimension(150, 200)); // Tamaño fijo
+        cardSlot.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        panel.add(cardSlot, BorderLayout.CENTER);
+
+        JPanel scoresPanel = new JPanel(new GridLayout(2, 1));
+        JLabel totalScoreLabel = new JLabel("TOTAL SCORE:");
+        scoresPanel.add(totalScoreLabel);
+        JLabel scoreHistoryLabel = new JLabel("Score history:");
+        scoresPanel.add(scoreHistoryLabel);
+        panel.add(scoresPanel, BorderLayout.SOUTH);
+
+        if (labelText.equals("CRUPIER")) {
+            cardSlot1 = cardSlot;
+        } else {
+            cardSlot2 = cardSlot;
+        }
+
+        return panel;
+    }
+
+
+    private JPanel createBottomPanel() {
+        JPanel bottomPanel = new JPanel(new FlowLayout());
+        JButton newCardButton = new JButton("New Card");
+        JButton standButton = new JButton("Stand");
+
+        bottomPanel.add(newCardButton);
+        bottomPanel.add(standButton);
+
+        standButton.addActionListener(e -> standAction());
+
+        return bottomPanel;
+    }
+
+    public void updateLoginButtonState(boolean isLoggedIn) {
+        loginButton.setBackground(isLoggedIn ? Color.GREEN : null);
+    }
+
+    public void updateLogoutButtonState(boolean isLoggedIn) {
+        logoutButton.setVisible(isLoggedIn);
+    }
+
+    private void standAction() {
+        JOptionPane.showMessageDialog(this, "Player stands!");
+    }
+
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+    
+    public String getSelectedCardLan() {
+        return (String) cardLanSelector.getSelectedItem();
+    }
+
+///
+}

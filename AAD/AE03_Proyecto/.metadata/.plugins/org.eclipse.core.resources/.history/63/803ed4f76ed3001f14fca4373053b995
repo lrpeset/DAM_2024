@@ -1,0 +1,30 @@
+package com.blackjack;
+
+import com.blackjack.model.ConfigManager;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.model.ScoreManager;
+import com.blackjack.view.MainView;
+
+import javax.swing.*;
+
+public class App {
+    public static void main(String[] args) {
+        ConfigManager configManager;
+        try {
+            configManager = new ConfigManager("db_config.json");
+        } catch (Exception e) {
+            System.out.println("Error loading configuration file: " + e.getMessage());
+            return;
+        }
+
+        MongoDBManager dbManager = new MongoDBManager(configManager);
+
+        ScoreManager scoreManager = new ScoreManager(dbManager);
+
+        MainView mainView = new MainView(dbManager, scoreManager);
+
+        SwingUtilities.invokeLater(() -> {
+            mainView.setVisible(true);
+        });
+    }
+}

@@ -1,0 +1,34 @@
+package com.blackjack.model;
+
+import javax.swing.text.Document;
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+public class CardService {
+    private MongoCollection<Document> collection;
+
+    public CardService(MongoDatabase db, String collectionName) {
+        this.collection = db.getCollection(collectionName);
+    }
+
+    public Card getRandomCard() {
+        // Obtenemos un documento aleatorio de la colección
+        Document document = collection.aggregate(
+            Arrays.asList(
+                Aggregates.sample(1)
+            )
+        ).first();
+
+        // Creamos un objeto Card a partir del documento obtenido
+        if (document != null) {
+            String suit = document.getString("suit");
+            int points = document.getInteger("points");
+            String base64 = document.getString("base64");
+            return new Card(suit, points, base64);
+        }
+
+        return null; // Retornamos null si no se encuentra nada
+    }
+}
+

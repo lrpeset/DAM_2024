@@ -1,0 +1,33 @@
+package com.blackjack.model;
+
+public class Score {
+    private String username;
+    private String suit;
+    private int points;
+    private String timestamp;
+
+    // Constructor
+    public Score(String username, String suit, int points, String timestamp) {
+        this.username = username;
+        this.suit = suit;
+        this.points = points;
+        this.timestamp = timestamp;
+    }
+
+    // Getters y setters
+    public String getUsername() {
+        return username;
+    }
+
+    public String getSuit() {
+        return suit;
+    }
+
+    public int getPoints() {
+        return points;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+}

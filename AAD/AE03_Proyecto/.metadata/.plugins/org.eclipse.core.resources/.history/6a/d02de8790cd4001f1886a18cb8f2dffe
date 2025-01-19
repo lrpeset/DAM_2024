@@ -1,0 +1,23 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            MongoDBManager dbManager = new MongoDBManager("mongodb://localhost:27017");
+            GameController controller = new GameController(dbManager);
+            MainView view = new MainView();
+            view.setVisible(true);
+
+            view.getLoadCardsButton().addActionListener(e -> {
+                String deckType = (String) view.getCardSuitSelector().getSelectedItem();
+                controller.loadDeck(deckType);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

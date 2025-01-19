@@ -1,0 +1,23 @@
+package com.blackjack.model;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
+
+public class DatabaseManager {
+    private MongoClient client;
+    private MongoDatabase database;
+
+    public DatabaseManager() {
+        client = MongoClients.create("mongodb://localhost:27017");
+        database = client.getDatabase("casino");
+    }
+
+    public MongoDatabase getDatabase() {
+        return database;
+    }
+
+    public void close() {
+        client.close();
+    }
+}

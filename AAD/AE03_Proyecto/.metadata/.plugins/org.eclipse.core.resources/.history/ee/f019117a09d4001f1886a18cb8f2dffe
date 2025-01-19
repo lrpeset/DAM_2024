@@ -1,0 +1,77 @@
+package com.blackjack;
+
+import javax.swing.*;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            // Cargar configuración de la base de datos desde un archivo JSON
+            String configFilePath = "config.json"; // Asegúrate de que este archivo exista en la raíz del proyecto
+            MongoDBManager dbManager = new MongoDBManager(configFilePath);
+
+            // Inicializar la vista principal
+            SwingUtilities.invokeLater(() -> {
+                MainView mainView = new MainView();
+                GameController gameController = new GameController(dbManager);
+
+                // Configurar eventos de la interfaz gráfica
+                mainView.getStartButton().addActionListener(e -> {
+                    String selectedDeck = (String) mainView.getDeckTypeComboBox().getSelectedItem();
+                    if ("Spanish".equalsIgnoreCase(selectedDeck)) {
+                        gameController.initializeDeck("cards_es");
+                    } else {
+                        gameController.initializeDeck("cards_fr");
+                    }
+                    mainView.getGameLog().append("Game started with " + selectedDeck + " deck.\n");
+                });
+
+                mainView.getHitButton().addActionListener(e -> {
+                    gameController.processUserAction("hit");
+                    mainView.getGameLog().append("User hits!\n");
+                    // Aquí se pueden agregar actualizaciones de la interfaz para mostrar cartas y puntuaciones
+                });
+
+                mainView.getStandButton().addActionListener(e -> {
+                    gameController.processUserAction("stand");
+                    mainView.getGameLog().append("User stands.\n");
+                    gameController.processDealerAction();
+                    mainView.getGameLog().append("Dealer completed their turn.\n");
+                    // Actualizar interfaz con el resultado del crupier
+                });
+
+                mainView.getSaveScoreButton().addActionListener(e -> {
+                    // Lógica para guardar la puntuación del usuario
+                    mainView.getGameLog().append("Score saved to the database.\n");
+                });
+
+                mainView.getShowScoresButton().addActionListener(e -> {
+                    // Lógica para mostrar las puntuaciones desde la base de datos
+                    mainView.getGameLog().append("Displaying high scores:\n");
+                    // Mostrar las puntuaciones ordenadas
+                });
+
+                // Configurar cierre de sesión (logout)
+                mainView.addWindowListener(new java.awt.event.WindowAdapter() {
+                    @Override
+                    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                        JOptionPane.showMessageDialog(mainView, "Session closed. Goodbye!");
+                        System.exit(0);
+                    }
+                });
+
+                // Mostrar la interfaz gráfica
+                mainView.pack();
+                mainView.setLocationRelativeTo(null);
+                mainView.setVisible(true);
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error initializing the application: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}

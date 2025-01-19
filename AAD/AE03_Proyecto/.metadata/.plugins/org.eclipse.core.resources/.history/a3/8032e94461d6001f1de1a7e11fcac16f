@@ -1,0 +1,68 @@
+package com.blackjack.model;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class User {
+    private String user;
+    private String suit;
+    private int points;
+    private String timestamp;
+
+    // Constructor
+    public User(String user, String suit, int points) {
+        this.user = user;
+        this.suit = suit;
+        this.points = points;
+        this.timestamp = getCurrentTimestamp();
+    }
+
+    // Método para obtener la fecha y hora actual en el formato deseado
+    private String getCurrentTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        return sdf.format(new Date());
+    }
+
+    // Getters y Setters
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getSuit() {
+        return suit;
+    }
+
+    public void setSuit(String suit) {
+        this.suit = suit;
+    }
+
+    public int getPoints() {
+        return points;
+    }
+
+    public void setPoints(int points) {
+        this.points = points;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    // Método para convertir el objeto User a un Document de MongoDB
+    public Document toDocument() {
+        Document doc = new Document();
+        doc.append("user", this.user)
+            .append("suit", this.suit)
+            .append("points", this.points)
+            .append("timestamp", this.timestamp);
+        return doc;
+    }
+}

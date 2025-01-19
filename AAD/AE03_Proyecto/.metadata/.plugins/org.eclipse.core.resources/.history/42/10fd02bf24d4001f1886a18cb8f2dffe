@@ -1,0 +1,25 @@
+package com.blackjack.model;
+
+public class Card {
+    private String suit;
+    private int points;
+    private String base64Image;
+
+    public Card(String suit, int points, String base64Image) {
+        this.suit = suit;
+        this.points = points;
+        this.base64Image = base64Image;
+    }
+
+    public String getSuit() {
+        return suit;
+    }
+
+    public int getPoints() {
+        return points;
+    }
+
+    public String getBase64Image() {
+        return base64Image;
+    }
+}

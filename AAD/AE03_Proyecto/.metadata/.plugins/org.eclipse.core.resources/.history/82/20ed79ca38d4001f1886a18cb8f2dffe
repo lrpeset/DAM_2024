@@ -1,0 +1,68 @@
+package com.blackjack.view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+
+public class RegisterView extends JFrame implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;  // Agregar serialVersionUID
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JPasswordField repeatedPasswordField;
+    private JButton okButton;
+    private JButton cancelButton;
+
+    public RegisterView() {
+        setTitle("Register");
+        setSize(300, 250);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(4, 2));
+
+        panel.add(new JLabel("Username:"));
+        usernameField = new JTextField();
+        panel.add(usernameField);
+
+        panel.add(new JLabel("Password:"));
+        passwordField = new JPasswordField();
+        panel.add(passwordField);
+
+        panel.add(new JLabel("Repeat Password:"));
+        repeatedPasswordField = new JPasswordField();
+        panel.add(repeatedPasswordField);
+
+        okButton = new JButton("OK");
+        cancelButton = new JButton("Cancel");
+
+        panel.add(okButton);
+        panel.add(cancelButton);
+
+        add(panel);
+    }
+
+    public String getUsername() {
+        return usernameField.getText();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public String getRepeatedPassword() {
+        return new String(repeatedPasswordField.getPassword());
+    }
+
+    public void addOkButtonListener(ActionListener listener) {
+        okButton.addActionListener(listener);
+    }
+
+    public void addCancelButtonListener(ActionListener listener) {
+        cancelButton.addActionListener(listener);
+    }
+
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+}

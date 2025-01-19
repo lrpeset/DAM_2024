@@ -1,0 +1,47 @@
+package com.blackjack.view;
+
+import javax.swing.*;
+import java.awt.event.ActionListener;
+
+public class RegisterView extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JPasswordField repeatedPasswordField;
+    private JButton okButton;
+    private JButton cancelButton;
+
+    public RegisterView() {
+        // Configuración de la vista de registro
+        usernameField = new JTextField();
+        passwordField = new JPasswordField();
+        repeatedPasswordField = new JPasswordField();
+        okButton = new JButton("OK");
+        cancelButton = new JButton("Cancel");
+
+        // Agregar los listeners de los botones
+        // ...
+
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setSize(300, 200);
+    }
+
+    public String getUsername() {
+        return usernameField.getText();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public String getRepeatedPassword() {
+        return new String(repeatedPasswordField.getPassword());
+    }
+
+    public void addOkButtonListener(ActionListener listener) {
+        okButton.addActionListener(listener);
+    }
+
+    public void addCancelButtonListener(ActionListener listener) {
+        cancelButton.addActionListener(listener);
+    }
+}

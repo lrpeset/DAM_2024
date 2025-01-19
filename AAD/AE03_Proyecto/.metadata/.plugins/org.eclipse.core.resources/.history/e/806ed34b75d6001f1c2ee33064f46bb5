@@ -1,0 +1,196 @@
+package com.blackjack.view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.Base64;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+
+public class MainView extends JFrame {
+    private static final long serialVersionUID = 1L;
+
+    private JButton loadCardsButton, registerButton, loginButton, startButton, saveButton, hallOfFameButton, logoutButton;
+    public JButton standButton, newCardButton;
+    public JComboBox<String> cardLanSelector;
+    public JLabel cardSlot1;
+    public JLabel cardSlot2;
+    public JLabel scoreSlot1;
+    public JLabel scoreSlot2;
+
+    private GameController gameController;
+    @SuppressWarnings("unused")
+	private MongoDBManager mongoDBManager;
+
+    public MainView(GameController controller, MongoDBManager mongoDBManager) {
+        this.gameController = controller;
+        this.mongoDBManager = mongoDBManager;
+        initializeView();
+    }
+
+    private void initializeView() {
+        setTitle("Blackjack");
+        setSize(900, 800);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        JPanel topPanel = createTopPanel();
+        JPanel centerPanel = createCenterPanel();
+        JPanel bottomPanel = createBottomPanel();
+
+        add(topPanel, BorderLayout.NORTH);
+        add(centerPanel, BorderLayout.CENTER);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        registerButton.addActionListener(e -> gameController.showRegisterView());
+        loginButton.addActionListener(e -> gameController.loginAction(this));
+        logoutButton.addActionListener(e -> gameController.logoutAction(this));
+        loadCardsButton.addActionListener(e -> gameController.handleLoadCards(getSelectedCardLan()));
+        startButton.addActionListener(e -> gameController.onStartButtonPressed());
+        saveButton.addActionListener(e -> mongoDBManager.saveUserScore());
+    }
+
+    private JPanel createTopPanel() {
+        JPanel panel = new JPanel(new FlowLayout());
+        loadCardsButton = new JButton("Load Cards");
+        registerButton = new JButton("Register");
+        loginButton = new JButton("Login");
+        cardLanSelector = new JComboBox<>(new String[]{"ES", "FR"});
+        startButton = new JButton("Start");
+        saveButton = new JButton("Save");
+        hallOfFameButton = new JButton("Hall of Fame");
+        logoutButton = new JButton("Logout");
+
+        newCardButton = new JButton("New Card");
+        standButton = new JButton("Stand");
+
+        setButtonsEnabled(false);
+
+        panel.add(loadCardsButton);
+        panel.add(registerButton);
+        panel.add(loginButton);
+        panel.add(cardLanSelector);
+        panel.add(startButton);
+        panel.add(saveButton);
+        panel.add(hallOfFameButton);
+        panel.add(logoutButton);
+        return panel;
+    }
+
+    private JPanel createCenterPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 2));
+        panel.add(createCardPanel("CRUPIER"));
+        panel.add(createCardPanel("PLAYER"));
+        return panel;
+    }
+
+    private JPanel createCardPanel(String labelText) {
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel(labelText, SwingConstants.CENTER);
+        panel.add(label, BorderLayout.NORTH);
+
+        JLabel cardSlot = new JLabel();
+        cardSlot.setHorizontalAlignment(SwingConstants.CENTER);
+        cardSlot.setVerticalAlignment(SwingConstants.CENTER);
+        cardSlot.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        panel.add(cardSlot, BorderLayout.CENTER);
+
+        JLabel scoreSlot = new JLabel("Score: 0", SwingConstants.CENTER);
+        panel.add(scoreSlot, BorderLayout.SOUTH);
+
+        if (labelText.equals("CRUPIER")) {
+            cardSlot1 = cardSlot;
+            scoreSlot1 = scoreSlot;
+        } else {
+            cardSlot2 = cardSlot;
+            scoreSlot2 = scoreSlot;
+        }
+
+        return panel;
+    }
+
+    private JPanel createBottomPanel() {
+        JPanel panel = new JPanel(new FlowLayout());
+
+        panel.add(newCardButton);
+        panel.add(standButton);
+
+        newCardButton.addActionListener(e -> gameController.drawCardForPlayer());
+        standButton.addActionListener(e -> gameController.onStandButtonPress());
+        return panel;
+    }
+
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+
+    public String getSelectedCardLan() {
+        return (String) cardLanSelector.getSelectedItem();
+    }
+
+    public int showPlayerSelectionDialog() {
+        Object[] options = {"Crupier(A.I.)", "User(Human)"};
+        return JOptionPane.showOptionDialog(
+            this,
+            "Seleccione el jugador",
+            "Selección de Jugador",
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.INFORMATION_MESSAGE,
+            null,
+            options,
+            options[0]
+        );
+    }
+
+    public void updateLoginButtonState(boolean isLoggedIn) {
+        loginButton.setBackground(isLoggedIn ? Color.GREEN : null);
+        setButtonsEnabled(isLoggedIn);
+    }
+
+    private void setButtonsEnabled(boolean isLoggedIn) {
+        loadCardsButton.setEnabled(isLoggedIn);
+        startButton.setEnabled(isLoggedIn);
+        saveButton.setEnabled(isLoggedIn);
+        hallOfFameButton.setEnabled(isLoggedIn);
+        logoutButton.setEnabled(isLoggedIn);
+        cardLanSelector.setEnabled(isLoggedIn);
+
+        if (newCardButton != null) {
+            newCardButton.setEnabled(isLoggedIn);
+        }
+        if (standButton != null) {
+            standButton.setEnabled(isLoggedIn);
+        }
+    }
+
+    public void updateCardImages(String base64CrupierCard, String base64PlayerCard) {
+        setCardImage(cardSlot1, base64CrupierCard);
+        setCardImage(cardSlot2, base64PlayerCard);
+    }
+
+    public void updateScore(String crupierScore, String playerScore) {
+        scoreSlot1.setText("Score: " + crupierScore);
+        scoreSlot2.setText("Score: " + playerScore);
+    }
+
+    private void setCardImage(JLabel cardSlot, String base64Image) {
+        if (cardSlot.getWidth() == 0 || cardSlot.getHeight() == 0) {
+            System.err.println("Tamaño de cardSlot no válido.");
+            return;
+        }
+
+        try {
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+            ImageIcon originalIcon = new ImageIcon(imageBytes);
+
+            Image scaledImage = originalIcon.getImage().getScaledInstance(cardSlot.getWidth(), cardSlot.getHeight(),
+                Image.SCALE_SMOOTH);
+
+            cardSlot.setIcon(new ImageIcon(scaledImage));
+            cardSlot.revalidate();
+            cardSlot.repaint();
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error al decodificar la imagen: " + e.getMessage());
+        }
+    }
+}

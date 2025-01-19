@@ -1,0 +1,27 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+
+import javax.swing.*;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            // Crear el manager de la base de datos
+            MongoDBManager dbManager = new MongoDBManager("db_config.json");
+            
+            // Crear el controlador que se encargará de gestionar la lógica de negocio
+            GameController controller = new GameController(dbManager);
+            
+            // Crear la vista principal y pasarle el controlador
+            MainView mainView = new MainView(controller);
+
+            // Mostrar la vista principal
+            mainView.setVisible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

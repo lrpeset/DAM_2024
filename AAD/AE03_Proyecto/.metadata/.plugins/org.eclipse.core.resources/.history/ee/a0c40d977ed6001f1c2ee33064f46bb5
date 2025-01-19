@@ -1,0 +1,38 @@
+package com.blackjack.app;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+
+public class App {
+
+	/**
+	 * The entry point of the application.
+	 * 
+	 * Initializes the database manager, game controller, and main view, and sets up
+	 * the game environment. It also makes the main view visible to the user.
+	 * 
+	 * @param args Command line arguments.
+	 */
+	public static void main(String[] args) {
+		try {
+			// Initializes the database manager with configuration from the specified file
+			MongoDBManager dbManager = new MongoDBManager("db_config.json");
+
+			// Creates a new game controller passing the database manager
+			GameController gameController = new GameController(dbManager, null);
+
+			// Initializes the main view, passing the game controller and database manager
+			MainView mainView = new MainView(gameController, dbManager);
+
+			// Sets the main view in the game controller
+			gameController.setMainView(mainView);
+
+			// Makes the main view visible to the user
+			mainView.setVisible(true);
+		} catch (Exception e) {
+			// Handles any exceptions by printing the stack trace
+			e.printStackTrace();
+		}
+	}
+}

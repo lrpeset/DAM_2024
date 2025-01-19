@@ -1,0 +1,69 @@
+package com.blackjack.view;
+
+import com.blackjack.model.Card;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class GameView extends JFrame {
+    private JLabel userCardLabel, dealerCardLabel, userScoreLabel, dealerScoreLabel;
+    private JPanel userCardsPanel, dealerCardsPanel;
+    private JButton hitButton, standButton;
+
+    public GameView() {
+        setTitle("Blackjack Game - In Progress");
+        setLayout(new BorderLayout());
+        setSize(600, 400);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        userCardsPanel = new JPanel();
+        userCardsPanel.setLayout(new FlowLayout());
+        dealerCardsPanel = new JPanel();
+        dealerCardsPanel.setLayout(new FlowLayout());
+
+        userCardLabel = new JLabel("User Cards: ");
+        dealerCardLabel = new JLabel("Dealer Cards: ");
+        userScoreLabel = new JLabel("User Score: 0");
+        dealerScoreLabel = new JLabel("Dealer Score: 0");
+
+        hitButton = new JButton("Hit");
+        standButton = new JButton("Stand");
+
+        JPanel scorePanel = new JPanel();
+        scorePanel.setLayout(new GridLayout(1, 2));
+        scorePanel.add(userScoreLabel);
+        scorePanel.add(dealerScoreLabel);
+
+        JPanel actionPanel = new JPanel();
+        actionPanel.setLayout(new GridLayout(1, 2));
+        actionPanel.add(hitButton);
+        actionPanel.add(standButton);
+
+        add(userCardLabel, BorderLayout.NORTH);
+        add(dealerCardLabel, BorderLayout.SOUTH);
+        add(scorePanel, BorderLayout.CENTER);
+        add(userCardsPanel, BorderLayout.WEST);
+        add(dealerCardsPanel, BorderLayout.EAST);
+        add(actionPanel, BorderLayout.SOUTH);
+    }
+
+    public void updateGameView(List<Card> userCards, List<Card> dealerCards, int userScore, int dealerScore) {
+        userCardsPanel.removeAll();
+        dealerCardsPanel.removeAll();
+
+        for (Card card : userCards) {
+            userCardsPanel.add(new JLabel(new ImageIcon(card.getBase64Image())));
+        }
+
+        for (Card card : dealerCards) {
+            dealerCardsPanel.add(new JLabel(new ImageIcon(card.getBase64Image())));
+        }
+
+        userScoreLabel.setText("User Score: " + userScore);
+        dealerScoreLabel.setText("Dealer Score: " + dealerScore);
+
+        revalidate();
+        repaint();
+    }
+}

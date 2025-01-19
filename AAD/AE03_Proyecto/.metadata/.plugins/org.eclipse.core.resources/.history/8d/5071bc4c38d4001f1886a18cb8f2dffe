@@ -1,0 +1,58 @@
+package com.blackjack.view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+
+public class LoginView extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton;
+    private JButton cancelButton;
+
+    public LoginView() {
+        setTitle("Login");
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(3, 2));
+
+        panel.add(new JLabel("Username:"));
+        usernameField = new JTextField();
+        panel.add(usernameField);
+
+        panel.add(new JLabel("Password:"));
+        passwordField = new JPasswordField();
+        panel.add(passwordField);
+
+        loginButton = new JButton("Login");
+        cancelButton = new JButton("Cancel");
+
+        panel.add(loginButton);
+        panel.add(cancelButton);
+
+        add(panel);
+    }
+
+    public String getUsername() {
+        return usernameField.getText();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public void addLoginButtonListener(ActionListener listener) {
+        loginButton.addActionListener(listener);
+    }
+
+    public void addCancelButtonListener(ActionListener listener) {
+        cancelButton.addActionListener(listener);
+    }
+
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
+}

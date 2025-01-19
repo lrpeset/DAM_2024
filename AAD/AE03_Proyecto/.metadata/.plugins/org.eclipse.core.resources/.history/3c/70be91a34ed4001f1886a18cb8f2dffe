@@ -1,0 +1,26 @@
+package com.blackjack;
+
+import com.blackjack.controller.GameController;
+import com.blackjack.model.MongoDBManager;
+import com.blackjack.view.MainView;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            // Primero crear la instancia de MainView
+            MainView mainView = new MainView(null); // Pasamos null por ahora para evitar el error
+
+            // Ahora podemos crear el controller con la vista ya inicializada
+            MongoDBManager dbManager = new MongoDBManager("db_config.json");
+            GameController controller = new GameController(dbManager, mainView);
+
+            // Después, pasamos la instancia del controlador a la vista
+            mainView.setController(controller);
+
+            // Hacer visible la vista
+            mainView.setVisible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

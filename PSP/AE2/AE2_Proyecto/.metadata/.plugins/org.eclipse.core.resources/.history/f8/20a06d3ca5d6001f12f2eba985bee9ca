@@ -1,0 +1,120 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ServerThread extends Thread {
+    private Socket socket;
+    private Map<String, List<ServerThread>> channels;
+    private PrintWriter out;
+    private BufferedReader in;
+    private String currentChannel;
+    private String username;
+
+    public ServerThread(Socket socket, Map<String, List<ServerThread>> channels) {
+        this.socket = socket;
+        this.channels = channels;
+    }
+
+    @Override
+    public void run() {
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            
+            // Enviar lista de canales al cliente
+            out.println("Canales disponibles:");
+            for (String channel : channels.keySet()) {
+                out.println(channel);
+            }
+            
+            // Recibir elección del canal
+            String channelChoice = in.readLine();
+            if (channels.containsKey(channelChoice)) {
+                currentChannel = channelChoice;
+                List<ServerThread> channelThreads = channels.get(currentChannel);
+                synchronized (channelThreads) {
+                    channelThreads.add(this);
+                }
+                out.println("Canal elegido: " + currentChannel);
+            }
+
+            // Pedir el nombre de usuario
+            boolean usernameValid = false;
+            while (!usernameValid) {
+                out.println("Introduce tu nombre de usuario (sin espacios):");
+                username = in.readLine();
+                
+                if (username.contains(" ")) {
+                    out.println("El nombre no puede contener espacios.");
+                } else {
+                    boolean nameTaken = false;
+                    for (ServerThread thread : channels.get(currentChannel)) {
+                        if (thread.username != null && thread.username.equals(username)) {
+                            nameTaken = true;
+                            break;
+                        }
+                    }
+                    if (nameTaken) {
+                        out.println("Nombre de usuario ya en uso. Elige otro.");
+                    } else {
+                        usernameValid = true;
+                        out.println("Nombre de usuario aceptado.");
+                    }
+                }
+            }
+
+            // Leer mensajes del cliente
+            String message;
+            while ((message = in.readLine()) != null) {
+                if (message.equals("exit")) {
+                    break;
+                }
+                handleMessage(message);
+            }
+
+            // Eliminar al cliente de la lista de usuarios del canal
+            List<ServerThread> channelThreads = channels.get(currentChannel);
+            synchronized (channelThreads) {
+                channelThreads.remove(this);
+            }
+
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleMessage(String message) {
+        if (message.equals("whois")) {
+            // Enviar la lista de usuarios conectados en el canal
+            List<ServerThread> channelThreads = channels.get(currentChannel);
+            StringBuilder users = new StringBuilder("Usuarios en el canal: ");
+            for (ServerThread thread : channelThreads) {
+                if (thread.username != null) {
+                    users.append(thread.username).append(", ");
+                }
+            }
+            out.println(users.toString());
+        } else if (message.startsWith("@")) {
+            // Enviar el mensaje al canal especificado
+            String[] parts = message.split(" ", 2);
+            String targetChannel = parts[0].substring(1);
+            String msgContent = parts[1];
+
+            List<ServerThread> targetThreads = channels.get(targetChannel);
+            for (ServerThread thread : targetThreads) {
+                thread.out.println(username + ": " + msgContent);
+            }
+        } else {
+            // Enviar el mensaje a todos los usuarios del canal
+            List<ServerThread> channelThreads = channels.get(currentChannel);
+            for (ServerThread thread : channelThreads) {
+                if (thread != this) {
+                    thread.out.println(username + ": " + message);
+                }
+            }
+        }
+    }
+}

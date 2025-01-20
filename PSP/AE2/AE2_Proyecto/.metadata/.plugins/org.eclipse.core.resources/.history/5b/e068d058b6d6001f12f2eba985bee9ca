@@ -1,0 +1,84 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class Cliente {
+    private Socket socket;
+    private PrintWriter output;
+    private BufferedReader input;
+    private BufferedReader consola;
+
+    public Cliente(String host, int port) {
+        try {
+            this.socket = new Socket(host, port);
+            this.output = new PrintWriter(socket.getOutputStream(), true);
+            this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.consola = new BufferedReader(new InputStreamReader(System.in));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void enviarMensaje(String mensaje) {
+        output.println(mensaje);
+    }
+
+    public String leerMensaje() {
+        try {
+            return input.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    String getTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(new Date());
+    }
+
+    public static void main(String[] args) {
+        Cliente cliente = new Cliente("localhost", 5000);
+
+        // Recibir la lista de canales desde el servidor
+        String respuesta = cliente.leerMensaje();
+        System.out.println(respuesta);
+
+        try {
+            // Solicitar y enviar el canal
+            System.out.print("Selecciona un canal (número 1-4): ");
+            String canalSeleccionado = cliente.consola.readLine();
+            cliente.enviarMensaje(canalSeleccionado);
+
+            // Solicitar y enviar el nombre de usuario
+            respuesta = cliente.leerMensaje();
+            System.out.println(respuesta); // Solicitar nombre de usuario
+            System.out.print("Introduce tu nombre de usuario: ");
+            String username = cliente.consola.readLine();
+            cliente.enviarMensaje(username);
+
+            // Recibir la respuesta de validación del nombre de usuario
+            respuesta = cliente.leerMensaje();
+            System.out.println(respuesta);
+
+            // Hilos para enviar y recibir mensajes
+            new Thread(new ClienteHilo(cliente)).start();  // Hilo para recibir mensajes
+
+            String mensaje;
+            while (true) {
+                System.out.print("Escribe un mensaje: ");
+                mensaje = cliente.consola.readLine();
+                if (mensaje.equalsIgnoreCase("exit")) {
+                    cliente.enviarMensaje(mensaje);
+                    break;
+                }
+                cliente.enviarMensaje(mensaje);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

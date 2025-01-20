@@ -1,0 +1,154 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.List;
+import java.util.Map;
+
+class ServidorHilo extends Thread {
+    private final Socket clientSocket;
+    private final Map<String, List<ServidorHilo>> canales;
+    private String canalActual = null;
+    private String nombreUsuario = null;
+    private PrintWriter out;
+
+    public ServidorHilo(Socket clientSocket, Map<String, List<ServidorHilo>> canales) {
+        this.clientSocket = clientSocket;
+        this.canales = canales;
+    }
+
+    @Override
+    public void run() {
+        try (
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+        ) {
+            this.out = out;
+
+            out.println("Conectado al servidor. Elige un canal:");
+            for (String canal : canales.keySet()) {
+                out.println(canal);
+            }
+
+            // Elegir canal
+            canalActual = in.readLine();
+            if (!canales.containsKey(canalActual)) {
+                out.println("Canal no válido. Desconectando...");
+                clientSocket.close();
+                return;
+            }
+
+            // Nombre de usuario
+            out.println("Introduce tu nombre de usuario:");
+            while (true) {
+                nombreUsuario = in.readLine();
+                if (nombreUsuario == null || nombreUsuario.contains(" ")) {
+                    out.println("El nombre de usuario no puede contener espacios. Inténtalo de nuevo:");
+                } else if (esNombreDuplicado(nombreUsuario)) {
+                    out.println("El nombre de usuario ya está en uso en este canal. Inténtalo de nuevo:");
+                } else {
+                    synchronized (canales.get(canalActual)) {
+                        canales.get(canalActual).add(this);
+                    }
+                    out.println("OK");
+                    break;
+                }
+            }
+
+            // Comunicación con el cliente
+            String mensaje;
+            while ((mensaje = in.readLine()) != null) {
+                if (mensaje.equalsIgnoreCase("exit")) {
+                    desconectar();
+                    break;
+                } else if (mensaje.equalsIgnoreCase("whois")) {
+                    enviarListaUsuarios();
+                } else if (mensaje.startsWith("@")) {
+                    enviarMensajeACanalEspecifico(mensaje);
+                } else if (mensaje.equalsIgnoreCase("channels")) {
+                    enviarListaCanales();
+                } else {
+                    enviarMensajeACanal(mensaje);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error en el hilo del servidor: " + e.getMessage());
+        } finally {
+            desconectar();
+        }
+    }
+
+    private boolean esNombreDuplicado(String nombre) {
+        synchronized (canales.get(canalActual)) {
+            return canales.get(canalActual).stream()
+                    .anyMatch(hilo -> hilo.nombreUsuario.equals(nombre));
+        }
+    }
+
+    private void enviarListaUsuarios() {
+        synchronized (canales.get(canalActual)) {
+            StringBuilder lista = new StringBuilder("Usuarios en el canal " + canalActual + ":");
+            for (ServidorHilo hilo : canales.get(canalActual)) {
+                lista.append("\n").append(hilo.nombreUsuario);
+            }
+            out.println(lista.toString());
+        }
+    }
+
+    private void enviarMensajeACanal(String mensaje) {
+        synchronized (canales.get(canalActual)) {
+            for (ServidorHilo hilo : canales.get(canalActual)) {
+                if (!hilo.equals(this)) {
+                    hilo.out.println("[" + nombreUsuario + "] " + mensaje);
+                }
+            }
+        }
+    }
+
+    private void enviarMensajeACanalEspecifico(String mensaje) {
+        String[] partes = mensaje.split(" ", 2);
+        if (partes.length < 2) {
+            out.println("Formato incorrecto. Usa: @canal mensaje");
+            return;
+        }
+
+        String canalDestino = partes[0].substring(1);
+        String contenido = partes[1];
+
+        if (!canales.containsKey(canalDestino)) {
+            out.println("El canal " + canalDestino + " no existe.");
+            return;
+        }
+
+        synchronized (canales.get(canalDestino)) {
+            for (ServidorHilo hilo : canales.get(canalDestino)) {
+                hilo.out.println("[" + nombreUsuario + " desde " + canalActual + "] " + contenido);
+            }
+        }
+    }
+
+    private void enviarListaCanales() {
+        StringBuilder lista = new StringBuilder("Canales disponibles:");
+        for (String canal : canales.keySet()) {
+            lista.append("\n").append(canal);
+        }
+        out.println(lista.toString());
+    }
+
+    private void desconectar() {
+        if (canalActual != null && canales.get(canalActual) != null) {
+            synchronized (canales.get(canalActual)) {
+                canales.get(canalActual).remove(this);
+            }
+        }
+        System.out.println("Usuario " + nombreUsuario + " desconectado del canal " + canalActual);
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            System.err.println("Error al cerrar la conexión del cliente: " + e.getMessage());
+        }
+    }
+}

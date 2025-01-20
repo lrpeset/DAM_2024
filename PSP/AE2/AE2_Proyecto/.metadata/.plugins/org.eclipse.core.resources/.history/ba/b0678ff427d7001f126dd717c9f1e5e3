@@ -1,0 +1,110 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+public class ServidorHilo implements Runnable {
+    private Socket clienteSocket;
+    private BufferedReader input;
+    private PrintWriter output;
+    private Map<String, List<ServidorHilo>> canales;
+    private String canalActual;
+    private String nombreUsuario;
+
+    public ServidorHilo(Socket clienteSocket, Map<String, List<ServidorHilo>> canales) {
+        this.clienteSocket = clienteSocket;
+        this.canales = canales;
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Validar IP y puerto del cliente
+            String clientIp = input.readLine();
+            if (!clientIp.equals(servidor.getInetAddress().getHostAddress())) {
+                output.println("IP incorrecta. Conexión rechazada.");
+                cerrarConexion();
+                return;
+            }
+
+            String clientPort = input.readLine();
+            if (!clientPort.equals(String.valueOf(servidor.getLocalPort()))) {
+                output.println("Puerto incorrecto. Conexión rechazada.");
+                cerrarConexion();
+                return;
+            }
+
+            // Enviar la lista de canales disponibles
+            output.println("Conexión exitosa. Por favor, selecciona un canal:");
+            output.println(listaCanales());
+
+            // Procesar selección de canal
+            int canalSeleccionado = Integer.parseInt(input.readLine());
+            if (canalSeleccionado < 1 || canalSeleccionado > canales.size()) {
+                output.println("Selección inválida. Conexión terminada.");
+                cerrarConexion();
+                return;
+            }
+
+            Canal canal = canales.get(canalSeleccionado - 1);
+            output.println("Seleccionaste el canal: " + canal.getNombre());
+            output.println("Por favor, introduce un nombre de usuario:");
+
+            // Validar nombre de usuario
+            String username;
+            while (true) {
+                username = input.readLine();
+                if (canal.agregarUsuario(username)) {
+                    break;
+                }
+                output.println("Nombre de usuario en uso. Por favor, elige otro:");
+            }
+
+            output.println("Bienvenido al canal " + canal.getNombre() + ", " + username);
+
+            // Añadir este hilo a la lista de clientes conectados al canal
+            canal.agregarHilo(this);
+
+            // Leer mensajes del cliente y distribuirlos
+            String mensaje;
+            while ((mensaje = input.readLine()) != null) {
+                canal.enviarMensaje("[" + obtenerMarcaTiempo() + "] " + username + ": " + mensaje, this);
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error en el hilo del cliente: " + e.getMessage());
+        } finally {
+            cerrarConexion();
+        }
+    }
+
+
+    private void enviarATodos(String mensaje) {
+        synchronized (canales.get(canalActual)) {
+            for (ServidorHilo hilo : canales.get(canalActual)) {
+                hilo.output.println(mensaje);
+            }
+        }
+    }
+
+    private void desconectar() {
+        try {
+            synchronized (canales.get(canalActual)) {
+                canales.get(canalActual).remove(this);
+                enviarATodos("Usuario " + nombreUsuario + " ha abandonado el canal.");
+            }
+            cerrarConexion();
+        } catch (Exception e) {
+            System.err.println("Error al desconectar cliente: " + e.getMessage());
+        }
+    }
+
+    private void cerrarConexion() throws IOException {
+        if (clienteSocket != null) clienteSocket.close();
+        if (input != null) input.close();
+        if (output != null) output.close();
+    }
+}

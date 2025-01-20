@@ -1,0 +1,116 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+public class ServidorHilo implements Runnable {
+    private Socket clienteSocket;
+    private BufferedReader input;
+    private PrintWriter output;
+    private Map<String, List<ServidorHilo>> canales;
+    private String canalActual;
+    private String nombreUsuario;
+
+    public ServidorHilo(Socket clienteSocket, Map<String, List<ServidorHilo>> canales) {
+        this.clienteSocket = clienteSocket;
+        this.canales = canales;
+    }
+
+    @Override
+    public void run() {
+        try {
+            input = new BufferedReader(new InputStreamReader(clienteSocket.getInputStream()));
+            output = new PrintWriter(clienteSocket.getOutputStream(), true);
+
+            // Mostrar canales disponibles al cliente
+            output.println("Canales disponibles:");
+            List<String> canalList = new ArrayList<>(canales.keySet());
+            for (int i = 0; i < canalList.size(); i++) {
+                output.println((i + 1) + "- " + canalList.get(i));
+            }
+
+            // Solicitar selección de canal
+         // Solicitar selección de canal
+            output.println("Selecciona un canal (número):");
+            String canalSeleccionado = input.readLine();
+            int canalIndice;
+
+            try {
+                canalIndice = Integer.parseInt(canalSeleccionado) - 1; // Convertir a índice 0-based
+                if (canalIndice < 0 || canalIndice >= canalList.size()) {
+                    output.println("Canal no válido. Desconectando.");
+                    cerrarConexion();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                output.println("Entrada no válida. Desconectando.");
+                cerrarConexion();
+                return;
+            }
+
+            canalActual = canalList.get(canalIndice);
+
+            // Solicitar nombre de usuario y validarlo
+            output.println("Introduce tu nombre de usuario:");
+            while (true) {
+                nombreUsuario = input.readLine();
+                synchronized (canales.get(canalActual)) {
+                    boolean existe = canales.get(canalActual).stream()
+                            .anyMatch(hilo -> hilo.nombreUsuario.equals(nombreUsuario));
+                    if (!existe) {
+                        canales.get(canalActual).add(this);
+                        break;
+                    }
+                }
+                output.println("Nombre de usuario ya en uso. Por favor, elige otro:");
+            }
+
+
+            // Confirmar conexión al canal
+            output.println("Conexión exitosa al canal: " + canalActual);
+            enviarATodos("Usuario " + nombreUsuario + " se ha unido al canal.");
+
+            // Manejar mensajes del cliente
+            String mensaje;
+            while ((mensaje = input.readLine()) != null) {
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                String mensajeFormateado = "[" + timestamp + "] " + nombreUsuario + ": " + mensaje;
+                enviarATodos(mensajeFormateado);
+            }
+        } catch (IOException e) {
+            System.err.println("Error con el cliente: " + e.getMessage());
+        } finally {
+            desconectar();
+        }
+    }
+
+
+    private void enviarATodos(String mensaje) {
+        synchronized (canales.get(canalActual)) {
+            for (ServidorHilo hilo : canales.get(canalActual)) {
+                hilo.output.println(mensaje);
+            }
+        }
+    }
+
+    private void desconectar() {
+        try {
+            synchronized (canales.get(canalActual)) {
+                canales.get(canalActual).remove(this);
+                enviarATodos("Usuario " + nombreUsuario + " ha abandonado el canal.");
+            }
+            cerrarConexion();
+        } catch (Exception e) {
+            System.err.println("Error al desconectar cliente: " + e.getMessage());
+        }
+    }
+
+    private void cerrarConexion() throws IOException {
+        if (clienteSocket != null) clienteSocket.close();
+        if (input != null) input.close();
+        if (output != null) output.close();
+    }
+}

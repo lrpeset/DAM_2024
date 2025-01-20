@@ -1,0 +1,106 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ServerThread extends Thread {
+    private static final Set<String> activeUsers = new HashSet<>(); // Para almacenar los usuarios activos
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private String username;
+    private String channel;
+    private Map<String, List<ServerThread>> channels;
+    private Set<String> users;
+
+    // Modificado: Constructor con los parámetros necesarios
+    public ServerThread(Socket socket, Map<String, List<ServerThread>> channels, Set<String> users) {
+        this.socket = socket;
+        this.channels = channels;
+        this.users = users;
+    }
+
+    @Override
+    public void run() {
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            out.println("Conexión establecida con el servidor.");
+
+            // Cargar canales disponibles desde un archivo
+            List<String> channelsList = loadChannels("src/channels.txt");
+            out.println("Canales disponibles:");
+            for (int i = 0; i < channelsList.size(); i++) {
+                out.println((i + 1) + ". " + channelsList.get(i));
+            }
+
+            // Pedir al cliente que seleccione un canal
+            out.print("Selecciona un canal por su número (1-" + channelsList.size() + "): ");
+            channel = in.readLine().trim();
+            out.println("Canal seleccionado: " + channel);
+
+            // Pedir al cliente el nombre de usuario
+            boolean usernameTaken;
+            do {
+                out.print("Introduce tu nombre de usuario (sin espacios): ");
+                username = in.readLine().trim();
+                usernameTaken = users.contains(username);
+
+                if (usernameTaken) {
+                    out.println("true");  // El nombre de usuario ya está en uso
+                } else {
+                    users.add(username);  // Registrar el nombre de usuario
+                    out.println("false");  // Nombre de usuario disponible
+                }
+            } while (usernameTaken);
+
+            out.println("Bienvenido, " + username);
+
+            // Añadir al usuario al canal correspondiente
+            channels.get(channel).add(this);
+
+            // Enviar mensajes al canal
+            String message;
+            while ((message = in.readLine()) != null) {
+                if (message.trim().length() > 0) {
+                    System.out.println("Mensaje de " + username + ": " + message);
+                    // Enviar mensaje a todos los clientes en el canal
+                    broadcastMessage(message);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (username != null) {
+                    users.remove(username);  // Eliminar usuario de la lista cuando se desconecte
+                }
+                if (channel != null) {
+                    channels.get(channel).remove(this);  // Eliminar del canal cuando se desconecte
+                }
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private List<String> loadChannels(String fileName) throws IOException {
+        List<String> channelsList = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channelsList.add(line.trim());
+            }
+        }
+        return channelsList;
+    }
+
+    // Enviar mensaje a todos los clientes en el mismo canal
+    private void broadcastMessage(String message) {
+        for (ServerThread client : channels.get(channel)) {
+            client.out.println(username + ": " + message);
+        }
+    }
+}

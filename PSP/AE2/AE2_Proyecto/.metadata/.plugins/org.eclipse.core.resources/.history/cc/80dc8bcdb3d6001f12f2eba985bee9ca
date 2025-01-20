@@ -1,0 +1,70 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ServidorHilo extends Thread {
+    private BufferedReader input;
+    private PrintWriter output;
+    private Socket clienteSocket;
+
+    // Mapa global para almacenar los usuarios conectados a cada canal
+    private static Map<String, List<String>> canalesConectados = new HashMap<>();
+
+    public ServidorHilo(Socket socket) {
+        this.clienteSocket = socket;
+        try {
+            this.input = new BufferedReader(new InputStreamReader(clienteSocket.getInputStream()));
+            this.output = new PrintWriter(clienteSocket.getOutputStream(), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Leer los canales desde el servidor
+            List<String> canales = Servidor.obtenerCanales();
+
+            // Enviar la lista de canales al cliente solo una vez
+            output.println("Canales disponibles:");
+            for (int i = 0; i < canales.size(); i++) {
+                output.println((i + 1) + "- " + canales.get(i));
+            }
+
+            // Esperar la selección del canal
+            String canalSeleccionado = input.readLine();
+            int canalIndex = Integer.parseInt(canalSeleccionado) - 1;
+
+            if (canalIndex >= 0 && canalIndex < canales.size()) {
+                String canal = canales.get(canalIndex);
+                output.println("Selecciona un nombre de usuario:");
+
+                // Leer el nombre de usuario desde el cliente
+                String username = input.readLine();
+
+                // Verificar si el nombre de usuario ya está en uso
+                if (canalesConectados.containsKey(canal) && canalesConectados.get(canal).contains(username)) {
+                    output.println("El nombre de usuario ya está en uso. Por favor elige otro.");
+                } else {
+                    canalesConectados.computeIfAbsent(canal, k -> new ArrayList<>()).add(username);
+                    output.println("USERNAME_OK");
+                    output.println("Bienvenido " + username + " al canal " + canal);
+                }
+            } else {
+                output.println("Canal no encontrado. Por favor elige un canal válido.");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                clienteSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

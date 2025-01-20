@@ -1,0 +1,138 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import javax.swing.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class Cliente {
+    private Socket socket;
+    private BufferedReader input;
+    private PrintWriter output;
+    private String username;
+
+    public Cliente(String serverIp, int serverPort) {
+        try {
+            // Conectar al servidor
+            socket = new Socket(serverIp, serverPort);
+            input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            output = new PrintWriter(socket.getOutputStream(), true);
+
+            System.out.println("Conectado al servidor en " + serverIp + ":" + serverPort);
+
+            // Seleccionar canal antes de pedir el nombre de usuario
+            if (seleccionarCanal()) {
+                // Pedir un nombre de usuario válido
+                if (solicitarUsername()) {
+                    // Lanzar hilo para recibir mensajes del servidor
+                    ClienteHilo receiver = new ClienteHilo(input);
+                    Thread receiverThread = new Thread(receiver);
+                    receiverThread.start();
+
+                    // Enviar mensajes al servidor
+                    enviarMensajes();
+                }
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error al conectar al servidor: " + e.getMessage());
+        }
+    }
+
+    private boolean seleccionarCanal() {
+        try {
+            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+
+            // Pedir canales disponibles
+            System.out.println("[Servidor]: Canales disponibles:");
+            System.out.println("[Servidor]: 1- cine");
+            System.out.println("[Servidor]: 2- música");
+            System.out.println("[Servidor]: 3- videojuegos");
+            System.out.println("[Servidor]: 4- literatura");
+
+            // Solicitar la selección del canal
+            System.out.print("Selecciona un canal (número): ");
+            String canalSeleccionado = consoleInput.readLine().trim();
+
+            if (canalSeleccionado != null && !canalSeleccionado.isEmpty()) {
+                System.out.println("Has seleccionado el canal: " + canalSeleccionado);
+                return true;
+            } else {
+                System.out.println("Selección de canal inválida. Intenta de nuevo.");
+                return false;
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error al seleccionar el canal: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean solicitarUsername() {
+        BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+        while (true) {
+            try {
+                // Pedir nombre de usuario
+                System.out.print("Introduce tu nombre de usuario: ");
+                username = consoleInput.readLine().trim();
+
+                // Validar que el nombre de usuario no esté vacío
+                if (username != null && !username.isEmpty()) {
+                    System.out.println("Bienvenido, " + username + "!");
+                    return true;
+                } else {
+                    System.out.println("El nombre de usuario no puede estar vacío. Inténtalo de nuevo.");
+                }
+            } catch (IOException e) {
+                System.err.println("Error al leer el nombre de usuario: " + e.getMessage());
+            }
+        }
+    }
+
+    private void enviarMensajes() {
+        try {
+            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+            // Enviar mensajes solo después de ingresar al canal
+            while (true) {
+                String inputLine = consoleInput.readLine();
+                
+                if (inputLine == null || inputLine.trim().isEmpty()) {
+                    // Si se presiona Enter sin texto, mostrar ventana emergente
+                    String mensaje = JOptionPane.showInputDialog(null, "Escribe tu mensaje:", "Enviar mensaje", JOptionPane.PLAIN_MESSAGE);
+
+                    if (mensaje == null || mensaje.trim().isEmpty()) {
+                        System.out.println("No se envió ningún mensaje.");
+                        continue;
+                    }
+
+                    // Agregar marca de tiempo
+                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    output.println(mensaje);
+                    System.out.println("[" + timestamp + "] " + username + ": " + mensaje);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error al leer entrada de consola: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+
+            // Pedir IP del servidor
+            System.out.print("Introduce la IP del servidor (localhost): ");
+            String serverIp = consoleInput.readLine();
+
+            // Pedir puerto del servidor
+            System.out.print("Introduce el puerto del servidor (5000): ");
+            int serverPort = Integer.parseInt(consoleInput.readLine());
+
+            // Crear instancia del cliente
+            new Cliente(serverIp, serverPort);
+        } catch (IOException e) {
+            System.err.println("Error en la entrada del cliente: " + e.getMessage());
+        }
+    }
+}

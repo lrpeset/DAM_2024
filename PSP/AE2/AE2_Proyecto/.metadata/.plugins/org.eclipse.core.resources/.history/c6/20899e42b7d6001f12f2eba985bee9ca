@@ -1,0 +1,59 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class Servidor {
+    // Listas para almacenar canales y usuarios
+    private static List<String> canales = Arrays.asList("cine", "música", "videojuegos", "literatura");
+    private static Map<String, CopyOnWriteArrayList<String>> usuariosPorCanal = new HashMap<>();
+
+    // Método para obtener los canales disponibles
+    public static List<String> obtenerCanales() {
+        return canales;
+    }
+
+    // Método para verificar si el nombre de usuario está en uso
+    public static boolean verificarNombreUsuario(String username) {
+        // Verifica en todos los canales si el nombre de usuario ya está en uso
+        for (Map.Entry<String, CopyOnWriteArrayList<String>> entry : usuariosPorCanal.entrySet()) {
+            if (entry.getValue().contains(username)) {
+                return false; // Usuario ya está en el canal
+            }
+        }
+        return true; // Nombre de usuario disponible
+    }
+
+    // Método para enviar un mensaje a todos los usuarios de un canal
+    public static void enviarAMensajesCanal(String canal, String mensaje) {
+        List<String> usuarios = usuariosPorCanal.getOrDefault(canal, new CopyOnWriteArrayList<>());
+        for (String usuario : usuarios) {
+            // Aquí se envían los mensajes a los usuarios del canal.
+            // Este es solo un ejemplo, en un sistema real tendrías que tener un método para enviar el mensaje a cada cliente.
+            System.out.println("Enviado a " + usuario + ": " + mensaje);
+        }
+    }
+
+    // Método para obtener los usuarios conectados a un canal
+    public static String obtenerUsuariosCanal(String canal) {
+        List<String> usuarios = usuariosPorCanal.getOrDefault(canal, new CopyOnWriteArrayList<>());
+        return String.join(", ", usuarios);
+    }
+
+    // Método principal para iniciar el servidor
+    public static void main(String[] args) {
+        // Aquí iría la lógica para aceptar conexiones de clientes y crear un hilo para cada cliente
+        // Por ejemplo, algo como esto:
+        try (ServerSocket serverSocket = new ServerSocket(12345)) {
+            while (true) {
+                Socket clienteSocket = serverSocket.accept();
+                // Aquí deberías crear un hilo para cada cliente
+                new Thread(new ServidorHilo(clienteSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

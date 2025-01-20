@@ -1,0 +1,13 @@
+while (true) {
+    System.out.print("Introduce tu nombre de usuario (sin espacios): ");
+    username = scanner.nextLine();
+    out.println(username);
+    usernameTaken = in.readLine().equals("true"); // Si el nombre está en uso, el servidor devuelve "true"
+    
+    if (!usernameTaken) {
+        System.out.println(getTimestamp() + " Nombre de usuario aceptado.");
+        break;
+    } else {
+        System.out.println(getTimestamp() + " El nombre de usuario ya está en uso, por favor elige otro.");
+    }
+}

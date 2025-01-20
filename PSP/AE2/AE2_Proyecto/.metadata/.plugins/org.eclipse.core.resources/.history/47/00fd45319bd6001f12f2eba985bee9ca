@@ -1,0 +1,92 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ClientMain {
+    public static void main(String[] args) throws IOException {
+        // Solicitar la IP y el puerto al usuario
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        
+        System.out.print("IP: ");
+        String serverIP = reader.readLine().trim();
+        
+        System.out.print("Puerto: ");
+        int serverPort = Integer.parseInt(reader.readLine().trim());
+
+        // Establecer la conexión con el servidor
+        Socket socket = new Socket(serverIP, serverPort);
+        System.out.println("Conexión establecida con el servidor.");
+
+        // Establecer streams de entrada y salida
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        
+        // Mostrar timestamp y los canales disponibles
+        Date now = new Date();
+        String timestamp = String.format("%1$td/%1$tm-%1$tH:%1$tM:%1$tS", now);
+        out.println("Canales disponibles:");
+
+        // Mostrar la lista de canales disponibles
+        List<String> channels = loadChannels("src/channels.txt");  // Asegúrate de que este archivo exista
+        System.out.println(timestamp + ": Canales disponibles: " + channels);
+
+        // Solicitar canal al cliente
+        System.out.print("Selecciona un canal por su número (1-4): ");
+        String channelChoice = reader.readLine().trim();
+        
+        // Enviar la selección del canal al servidor
+        out.println(channelChoice);
+
+        // Solicitar nombre de usuario
+        String username = promptUsername(in, out, reader);
+
+        // Recibir y mostrar mensajes del servidor
+        String serverMessage;
+        while ((serverMessage = in.readLine()) != null) {
+            System.out.println(serverMessage);
+            if (serverMessage.equalsIgnoreCase("exit")) {
+                break;
+            }
+        }
+
+        // Cerrar conexión
+        socket.close();
+    }
+
+    // Cargar los canales desde el archivo
+    private static List<String> loadChannels(String fileName) throws IOException {
+        List<String> channels = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channels.add(line.trim());  // Agregar canal al listado
+            }
+        }
+        return channels;
+    }
+
+    // Función para pedir y verificar el nombre de usuario
+    private static String promptUsername(BufferedReader in, PrintWriter out, BufferedReader reader) throws IOException {
+        String username;
+        boolean usernameTaken = false;
+        
+        do {
+            System.out.print("Introduce tu nombre de usuario (sin espacios): ");
+            username = reader.readLine().trim();
+            out.println(username);  // Enviar nombre de usuario al servidor
+
+            // Recibir la respuesta del servidor
+            String response = in.readLine();
+            if ("true".equalsIgnoreCase(response)) {
+                usernameTaken = true;
+                System.out.println("El usuario ya existe, elige otro nombre.");
+            } else {
+                usernameTaken = false;
+            }
+        } while (usernameTaken);
+        
+        return username;
+    }
+}

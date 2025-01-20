@@ -1,0 +1,25 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+
+public class ClientReceiverThread extends Thread {
+    private BufferedReader in;
+
+    public ClientReceiverThread(BufferedReader in) {
+        this.in = in;
+    }
+
+    @Override
+    public void run() {
+        try {
+            String message;
+            while ((message = in.readLine()) != null) {
+                String timestamp = "[" + java.time.LocalTime.now() + "] ";
+                System.err.println(timestamp + message); // Mensajes en rojo
+            }
+        } catch (IOException e) {
+            System.err.println("Conexión perdida con el servidor: " + e.getMessage());
+        }
+    }
+}

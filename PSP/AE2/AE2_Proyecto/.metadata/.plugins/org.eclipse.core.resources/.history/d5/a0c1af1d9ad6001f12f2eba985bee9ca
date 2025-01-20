@@ -1,0 +1,109 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ServerThread extends Thread {
+    private Socket socket;
+    private BufferedReader in;
+    private PrintWriter out;
+    private Map<String, List<ServerThread>> channels;
+    private String username;
+    private String channel;
+
+    public ServerThread(Socket socket, Map<String, List<ServerThread>> channels) throws IOException {
+        this.socket = socket;
+        this.channels = channels;
+        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.out = new PrintWriter(socket.getOutputStream(), true);
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Solicitar al cliente la selección de canal
+            selectChannel();
+
+            // Solicitar al cliente el nombre de usuario
+            selectUsername();
+
+            // Enviar mensaje de bienvenida al cliente
+            out.println("¡Bienvenido al canal " + channel + ", " + username + "!");
+            
+            // Recibir y reenviar mensajes del cliente a los demás usuarios del canal
+            String message;
+            while ((message = in.readLine()) != null) {
+                if ("exit".equalsIgnoreCase(message)) {
+                    break; // Salir si el cliente envía "exit"
+                }
+                sendMessageToChannel(message);
+            }
+
+            // Cerrar la conexión al cliente
+            disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void selectChannel() throws IOException {
+        // Enviar lista de canales disponibles
+        out.println("Selecciona un canal por su número:");
+        out.println("Canales disponibles: " + channels.keySet());
+
+        String choice = in.readLine().trim();
+        // Asegurarse de que el canal elegido es válido
+        if (!channels.containsKey(choice)) {
+            out.println("Canal no válido. Conectando al canal por defecto.");
+            choice = "1"; // Canal por defecto si la opción no es válida
+        }
+        channel = choice;
+
+        // Añadir el hilo del cliente al canal seleccionado
+        synchronized (channels) {
+            channels.get(channel).add(this);
+        }
+    }
+
+    private void selectUsername() throws IOException {
+        out.println("Introduce tu nombre de usuario:");
+        username = in.readLine().trim();
+
+        // Verificar que el nombre de usuario no esté ya en uso
+        while (isUsernameTaken()) {
+            out.println("El usuario ya existe, elige otro nombre:");
+            username = in.readLine().trim();
+        }
+    }
+
+    private boolean isUsernameTaken() {
+        synchronized (channels) {
+            for (List<ServerThread> channelThreads : channels.values()) {
+                for (ServerThread thread : channelThreads) {
+                    if (thread.username.equals(username)) {
+                        return true; // El nombre de usuario ya está en uso
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void sendMessageToChannel(String message) {
+        synchronized (channels) {
+            for (ServerThread thread : channels.get(channel)) {
+                thread.out.println(username + ": " + message);
+            }
+        }
+    }
+
+    private void disconnect() throws IOException {
+        synchronized (channels) {
+            channels.get(channel).remove(this); // Eliminar al cliente del canal
+        }
+        in.close();
+        out.close();
+        socket.close();
+    }
+}

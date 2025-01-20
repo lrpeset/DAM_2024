@@ -1,0 +1,89 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.Socket;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class ServidorHilo extends Thread {
+    private Socket socket;
+    private BufferedReader entrada;
+    private PrintWriter salida;
+    private Map<String, List<ServidorHilo>> canales;
+    private String canalActual;
+    private String nombreUsuario;
+
+    public ServidorHilo(Socket socket, Map<String, List<ServidorHilo>> canales) throws IOException {
+        this.socket = socket;
+        this.canales = canales;
+        this.entrada = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.salida = new PrintWriter(socket.getOutputStream(), true);
+        this.canalActual = null;
+        this.nombreUsuario = null;
+    }
+
+    @Override
+    public void run() {
+        try {
+            salida.println("Conectado al servidor. Canales disponibles:");
+            for (String canal : canales.keySet()) {
+                salida.println(canal);
+            }
+            salida.println("Elige un canal (por número):");
+
+            // Leer la selección del canal
+            String seleccion = entrada.readLine();
+            canalActual = obtenerNombreCanal(seleccion);
+
+            if (canalActual == null) {
+                salida.println("Selección inválida. Desconectando...");
+                desconectar();
+                return;
+            }
+
+            synchronized (canales.get(canalActual)) {
+                salida.println("Introduce tu nombre de usuario:");
+                while (true) {
+                    nombreUsuario = entrada.readLine();
+                    if (nombreUsuario == null || nombreUsuario.contains(" ")) {
+                        salida.println("Nombre inválido. Inténtalo de nuevo:");
+                        continue;
+                    }
+
+                    boolean nombreExiste = canales.get(canalActual).stream()
+                            .anyMatch(hilo -> hilo.nombreUsuario.equals(nombreUsuario));
+                    if (nombreExiste) {
+                        salida.println("Nombre ya en uso. Elige otro:");
+                    } else {
+                        canales.get(canalActual).add(this);
+                        salida.println("OK. Bienvenido al canal " + canalActual);
+                        break;
+                    }
+                }
+            }
+
+            // Comunicación principal
+            String mensaje;
+            while ((mensaje = entrada.readLine()) != null) {
+                if (mensaje.equals("exit")) {
+                    salida.println("Desconectando...");
+                    break;
+                } else if (mensaje.equals("whois")) {
+                    enviarUsuariosConectados();
+                } else if (mensaje.startsWith("@")) {
+                    enviarMensajeACanal(mensaje);
+                } else {
+                    enviarMensajeGlobal(mensaje);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error en la comunicación con el cliente: " + e.getMessage());
+        } finally {
+            try {
+                desconectar();
+            } catch (IOException e) {
+                System.err.println("Error al cerrar la conexión: " + e.getMessage());
+            }
+        }
+    }
+}

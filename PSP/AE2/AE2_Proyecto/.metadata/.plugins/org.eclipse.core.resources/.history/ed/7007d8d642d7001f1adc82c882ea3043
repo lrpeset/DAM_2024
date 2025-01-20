@@ -1,0 +1,56 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Servidor {
+	private static final int PORT = 5000;
+	private static final String CANALES_FILE = "canales.txt";
+
+	private Map<String, List<ServidorHilo>> canales = new HashMap<>();
+
+	public Servidor() {
+		cargarCanales();
+		iniciarServidor();
+	}
+
+	private void cargarCanales() {
+	    try (BufferedReader br = new BufferedReader(new FileReader(CANALES_FILE))) {
+	        String linea;
+	        int indice = 1;
+	        while ((linea = br.readLine()) != null) {
+	            String[] partes = linea.split("-");
+	            if (partes.length == 2) {
+	                String canal = partes[1].trim();
+	                canales.put(canal, new ArrayList<>());
+	                System.out.println(indice + "-" + canal);
+	                indice++;
+	            }
+	        }
+	    } catch (IOException e) {
+	        System.err.println("Error al cargar los canales: " + e.getMessage());
+	    }
+	}
+
+
+	private void iniciarServidor() {
+		try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+			System.out.println("Servidor iniciado en el puerto " + PORT);
+
+			while (true) {
+				Socket clienteSocket = serverSocket.accept();
+				System.out.println("Cliente conectado: " + clienteSocket.getInetAddress());
+
+				ServidorHilo clienteHilo = new ServidorHilo(clienteSocket, canales);
+				new Thread(clienteHilo).start();
+			}
+		} catch (IOException e) {
+			System.err.println("Error en el servidor: " + e.getMessage());
+		}
+	}
+
+	public static void main(String[] args) {
+		new Servidor();
+	}
+}

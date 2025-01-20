@@ -1,0 +1,47 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.*;
+
+public class ServerMain {
+    public static void main(String[] args) throws IOException {
+        int port = 5000;
+        ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Servidor iniciado en el puerto " + port);
+
+        // Cargar los canales desde el archivo
+        Map<String, List<ServerThread>> channels = loadChannels("src/channels.txt");
+        
+        // Crear un conjunto de usuarios global para el servidor
+        Set<String> users = new HashSet<>();  // Conjunto para almacenar los nombres de usuario
+
+        while (true) {
+            // Aceptar una nueva conexión de cliente
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
+
+            // Crear un nuevo hilo ServerThread y pasarle los canales y los usuarios
+            new ServerThread(clientSocket, channels, users).start();
+        }
+    }
+
+    private static Map<String, List<ServerThread>> loadChannels(String fileName) throws IOException {
+        Map<String, List<ServerThread>> channels = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                // Se asume que el archivo tiene formato "número-nombre"
+                String[] parts = line.split("-");
+                if (parts.length == 2) {
+                    String channelId = parts[0].trim();  // Ejemplo: "1", "2", "3", etc.
+                    channels.put(channelId, new ArrayList<>());  // Inicializar lista para el canal
+                }
+            }
+        }
+        return channels;
+    }
+}

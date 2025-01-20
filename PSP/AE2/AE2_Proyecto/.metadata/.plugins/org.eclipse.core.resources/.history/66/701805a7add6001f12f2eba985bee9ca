@@ -1,0 +1,60 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Servidor {
+    private static final int PUERTO = 5000;
+    static List<PrintWriter> clientes = new ArrayList<>();
+    static Map<String, List<PrintWriter>> canales = new HashMap<>();
+    private static final String FILE_PATH = "src/channels.txt";
+
+    public static void main(String[] args) {
+        // Leer los canales desde el archivo
+        cargarCanales();
+
+        try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
+            System.out.println("Servidor iniciado en el puerto " + PUERTO);
+
+            while (true) {
+                Socket clienteSocket = serverSocket.accept();  // Aceptar nuevos clientes
+                System.out.println("Cliente conectado: " + clienteSocket.getInetAddress());
+
+                // Crear hilo para gestionar el cliente
+                ServidorHilo hilo = new ServidorHilo(clienteSocket);
+                new Thread(hilo).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Cargar los canales desde el archivo
+    private static void cargarCanales() {
+        List<String> canalesDisponibles = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                canalesDisponibles.add(linea);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Crear la lista de canales
+        for (String canal : canalesDisponibles) {
+            canales.put(canal, new ArrayList<>());
+        }
+    }
+
+    // Método para enviar un mensaje a todos los clientes de un canal específico
+    static void enviarAMensajesCanal(String canal, String mensaje) {
+        List<PrintWriter> listaCanal = canales.get(canal);
+        if (listaCanal != null) {
+            for (PrintWriter pw : listaCanal) {
+                pw.println(mensaje);
+            }
+        }
+    }
+}

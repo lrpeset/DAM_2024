@@ -1,0 +1,39 @@
+package es.psp.ae2;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+class Servidor {
+    private static final int PORT = 12345;
+    private static final Map<String, List<ServidorHilo>> canales = new HashMap<>();
+
+    public static void main(String[] args) {
+        cargarCanales();
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Servidor iniciado en el puerto " + PORT);
+
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                new ServidorHilo(clientSocket).start();
+            }
+        } catch (IOException e) {
+            System.err.println("Error en el servidor: " + e.getMessage());
+        }
+    }
+
+    private static void cargarCanales() {
+        canales.put("cine", new ArrayList<>());
+        canales.put("música", new ArrayList<>());
+        canales.put("videojuegos", new ArrayList<>());
+        canales.put("literatura", new ArrayList<>());
+    }
+
+    public static Map<String, List<ServidorHilo>> getCanales() {
+        return canales;
+    }
+}

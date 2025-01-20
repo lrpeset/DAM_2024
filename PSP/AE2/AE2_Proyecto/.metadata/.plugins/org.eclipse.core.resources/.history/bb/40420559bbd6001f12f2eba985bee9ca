@@ -1,0 +1,21 @@
+package es.psp.ae2;
+
+class ClienteHilo implements Runnable {
+    private BufferedReader reader;
+
+    public ClienteHilo(BufferedReader reader) {
+        this.reader = reader;
+    }
+
+    @Override
+    public void run() {
+        try {
+            String mensaje;
+            while ((mensaje = reader.readLine()) != null) {
+                System.out.println("[" + new Date() + "] " + mensaje);
+            }
+        } catch (IOException e) {
+            System.err.println("Conexión cerrada.");
+        }
+    }
+}

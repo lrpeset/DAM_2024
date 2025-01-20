@@ -1,0 +1,5 @@
+package es.psp.ae2;
+
+public class ClienteHilo {
+
+}

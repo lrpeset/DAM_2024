@@ -1,0 +1,70 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+// Clase principal del cliente
+public class Cliente {
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 12345);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+             Scanner scanner = new Scanner(System.in)) {
+
+            // Leer los canales disponibles desde el servidor
+            System.out.println("Conectado al servidor. Canales disponibles:");
+            String line;
+            while (!(line = reader.readLine()).equals("END")) {
+                System.out.println(line);
+            }
+
+            // Selección del canal
+            System.out.print("Elige un canal: ");
+            String canal = scanner.nextLine();
+            writer.println(canal);
+
+            // Introducir nombre de usuario
+            System.out.print("Introduce tu nombre de usuario: ");
+            String username;
+            while (true) {
+                username = scanner.nextLine();
+                writer.println(username);
+                String response = reader.readLine();
+                if (response.equals("OK")) {
+                    break;
+                } else {
+                    System.out.println("Nombre ya en uso, elige otro: ");
+                }
+            }
+
+            System.out.println("Te has unido al canal: " + canal);
+
+            // Hilo para recibir mensajes
+            Thread recibirMensajes = new Thread(() -> {
+                try {
+                    String mensaje;
+                    while ((mensaje = reader.readLine()) != null) {
+                        System.out.println(mensaje);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Conexión cerrada.");
+                }
+            });
+            recibirMensajes.start();
+
+            // Enviar mensajes
+            String mensaje;
+            while (true) {
+                System.out.print("Mensaje: ");
+                mensaje = scanner.nextLine();
+                writer.println(mensaje);
+                if (mensaje.equals("exit")) {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error en el cliente: " + e.getMessage());
+        }
+    }
+}

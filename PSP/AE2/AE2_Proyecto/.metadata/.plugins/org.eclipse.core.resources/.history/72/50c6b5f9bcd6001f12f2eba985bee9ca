@@ -1,0 +1,96 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.List;
+
+class ServidorHilo extends Thread {
+    private final Socket socket;
+    private String canalActual;
+    private String username;
+    private PrintWriter writer;
+
+    public ServidorHilo(Socket socket) {
+        this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
+
+            this.writer = writer;
+
+            // Enviar canales al cliente
+            Servidor.getCanales().keySet().forEach(writer::println);
+            writer.println("END");
+
+            // Elegir canal
+            canalActual = reader.readLine();
+            List<ServidorHilo> usuariosCanal = Servidor.getCanales().get(canalActual);
+
+            synchronized (usuariosCanal) {
+                // Validar nombre de usuario
+                while (true) {
+                    username = reader.readLine();
+                    boolean nombreEnUso = usuariosCanal.stream()
+                            .anyMatch(hilo -> hilo.username.equals(username));
+
+                    if (!nombreEnUso) {
+                        usuariosCanal.add(this);
+                        writer.println("OK");
+                        break;
+                    } else {
+                        writer.println("Nombre ya en uso");
+                    }
+                }
+            }
+
+            String mensaje;
+            while ((mensaje = reader.readLine()) != null) {
+                if (mensaje.equals("exit")) {
+                    break;
+                } else if (mensaje.equals("whois")) {
+                    String usuarios = String.join(", ", 
+                        usuariosCanal.stream().map(h -> h.username).toArray(String[]::new));
+                    writer.println("Usuarios en el canal: " + usuarios);
+                } else if (mensaje.startsWith("@")) {
+                    String[] partes = mensaje.split(" ", 2);
+                    String canalDestino = partes[0].substring(1);
+                    String msg = partes.length > 1 ? partes[1] : "";
+                    enviarAMiembros(canalDestino, "[" + username + "]: " + msg);
+                } else {
+                    enviarAMiembros(canalActual, "[" + username + "]: " + mensaje);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error en el hilo del servidor: " + e.getMessage());
+        } finally {
+            desconectar();
+        }
+    }
+
+    private void enviarAMiembros(String canal, String mensaje) {
+        List<ServidorHilo> usuariosCanal = Servidor.getCanales().get(canal);
+        if (usuariosCanal != null) {
+            synchronized (usuariosCanal) {
+                for (ServidorHilo usuario : usuariosCanal) {
+                    usuario.writer.println(mensaje);
+                }
+            }
+        }
+    }
+
+    private void desconectar() {
+        if (canalActual != null) {
+            List<ServidorHilo> usuariosCanal = Servidor.getCanales().get(canalActual);
+            synchronized (usuariosCanal) {
+                usuariosCanal.remove(this);
+            }
+        }
+        System.out.println("Usuario desconectado: " + username);
+    }
+}

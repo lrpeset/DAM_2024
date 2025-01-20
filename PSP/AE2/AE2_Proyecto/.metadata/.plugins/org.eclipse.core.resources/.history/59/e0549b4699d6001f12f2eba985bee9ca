@@ -1,0 +1,153 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.Socket;
+import java.util.List;
+import java.util.Map;
+
+public class ServerThread extends Thread {
+    private Socket socket;
+    private Map<String, List<ServerThread>> channels;
+    private PrintWriter out;
+    private BufferedReader in;
+    private String username;
+    private String selectedChannel;
+
+    public ServerThread(Socket socket, Map<String, List<ServerThread>> channels) {
+        this.socket = socket;
+        this.channels = channels;
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Inicializar streams
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Enviar mensaje de bienvenida
+            out.println("Conexión establecida con el servidor.");
+            sendAvailableChannels();
+
+            // Selección de canal
+            selectedChannel = selectChannel();
+
+            // Validación del nombre de usuario
+            username = setUsername();
+
+            // Añadir el hilo a la lista del canal seleccionado
+            synchronized (channels) {
+                channels.get(selectedChannel).add(this);
+            }
+
+            // Interacción con el cliente
+            String message;
+            while ((message = in.readLine()) != null) {
+                handleClientMessage(message);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            disconnect();
+        }
+    }
+
+    private void sendAvailableChannels() {
+        StringBuilder channelList = new StringBuilder();
+        channels.keySet().forEach(channel -> {
+            channelList.append(channel).append("\n");
+        });
+        out.println("Canales disponibles:\n" + channelList.toString());
+        out.flush();
+    }
+
+    private String selectChannel() throws IOException {
+        out.println("Selecciona un canal por su número (1-4): ");
+        String channelNumber = in.readLine();
+        return channelNumber.trim(); // El número debe coincidir con la clave del canal
+    }
+
+    private String setUsername() throws IOException {
+        out.println("Indica tu nombre de usuario (sin espacios): ");
+        String username;
+        while (true) {
+            username = in.readLine().trim();
+            if (username.contains(" ")) {
+                out.println("El nombre no puede contener espacios. Intenta nuevamente.");
+            } else {
+                if (isUsernameAvailable(username)) {
+                    break;
+                } else {
+                    out.println("El usuario ya existe, indica otro:");
+                }
+            }
+        }
+        return username;
+    }
+
+    private boolean isUsernameAvailable(String username) {
+        synchronized (channels) {
+            for (List<ServerThread> threadList : channels.values()) {
+                for (ServerThread thread : threadList) {
+                    if (thread.username != null && thread.username.equals(username)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private void handleClientMessage(String message) {
+        switch (message) {
+            case "whois":
+                showUsersInChannel();
+                break;
+            case "channels":
+                sendAvailableChannels();
+                break;
+            case "exit":
+                disconnect();
+                break;
+            default:
+                sendMessageToChannel(message);
+                break;
+        }
+    }
+
+    private void showUsersInChannel() {
+        synchronized (channels) {
+            List<ServerThread> channelThreads = channels.get(selectedChannel);
+            StringBuilder users = new StringBuilder("Usuarios en el canal " + selectedChannel + ":\n");
+            for (ServerThread thread : channelThreads) {
+                users.append(thread.username).append("\n");
+            }
+            out.println(users.toString());
+        }
+    }
+
+    private void sendMessageToChannel(String message) {
+        synchronized (channels) {
+            List<ServerThread> channelThreads = channels.get(selectedChannel);
+            String timestamp = "[" + System.currentTimeMillis() + "]";
+            for (ServerThread thread : channelThreads) {
+                thread.out.println(timestamp + " " + username + ": " + message);
+            }
+        }
+    }
+
+    private void disconnect() {
+        try {
+            synchronized (channels) {
+                List<ServerThread> channelThreads = channels.get(selectedChannel);
+                if (channelThreads != null) {
+                    channelThreads.remove(this);
+                }
+            }
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

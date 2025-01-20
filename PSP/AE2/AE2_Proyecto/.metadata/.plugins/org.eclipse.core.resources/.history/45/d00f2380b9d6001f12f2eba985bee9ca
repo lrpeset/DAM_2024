@@ -1,0 +1,99 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class ServidorHilo implements Runnable {
+    private BufferedReader input;
+    private PrintWriter output;
+    private Socket clienteSocket;
+    private String canal;
+    private String username;
+
+    public ServidorHilo(Socket socket) {
+        this.clienteSocket = socket;
+        try {
+            this.input = new BufferedReader(new InputStreamReader(clienteSocket.getInputStream()));
+            this.output = new PrintWriter(clienteSocket.getOutputStream(), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Enviar lista de canales disponibles
+            List<String> canales = Servidor.obtenerCanales();
+            System.out.println("Esperando selección de canal..."); // Mensaje que indica que el servidor está esperando la selección del canal
+            output.println("Canales disponibles:");
+            for (int i = 0; i < canales.size(); i++) {
+                output.println((i + 1) + ". " + canales.get(i)); // Enviar los canales numerados
+            }
+
+            // Solicitar la selección del canal
+            output.println("Selecciona el número de canal (1-4):");
+            String canalSeleccionado = input.readLine();
+            int canalIndex = Integer.parseInt(canalSeleccionado) - 1;
+
+            // Verificar si el canal es válido
+            if (canalIndex >= 0 && canalIndex < canales.size()) {
+                canal = canales.get(canalIndex);
+
+                // Solo mostrar que el usuario se ha unido al canal sin mencionar el número de canal
+                System.out.println(username + " se ha unido al canal " + canal); // Mensaje de unión al canal
+                output.println("¡Bienvenido al canal " + canal + "!");
+                output.println("Introduce tu nombre de usuario:");
+
+                username = input.readLine();
+
+                // Verificar si el nombre de usuario está disponible
+                while (!verificarNombreUsuario(username)) {
+                    output.println("El nombre de usuario ya está en uso. Introduce otro nombre:");
+                    username = input.readLine();  // Aquí se lee el nuevo nombre
+                }
+
+                // Registrar al usuario en el canal
+                if (!Servidor.usuariosPorCanal.containsKey(canal)) {
+                    Servidor.usuariosPorCanal.put(canal, new CopyOnWriteArrayList<>());
+                }
+                Servidor.usuariosPorCanal.get(canal).add(username);
+
+                // Informar a todos los usuarios en el canal
+                Servidor.enviarAMensajesCanal(canal, username + " se ha unido al canal " + canal);
+                output.println("OK, te has unido al canal " + canal);
+            } else {
+                output.println("Canal no válido.");
+            }
+
+            // Esperar mensajes del cliente
+            String mensaje;
+            while ((mensaje = input.readLine()) != null) {
+                if (mensaje.equals("exit")) {
+                    break;
+                } else if (mensaje.equals("whois")) {
+                    output.println("Usuarios conectados en el canal " + canal + ": " + Servidor.obtenerUsuariosCanal(canal));
+                } else if (mensaje.equals("channels")) {
+                    output.println("Canales disponibles: " + Servidor.obtenerCanales());
+                } else {
+                    Servidor.enviarAMensajesCanal(canal, username + ": " + mensaje);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                // Eliminar al usuario del canal cuando se desconecta
+                if (username != null && canal != null) {
+                    Servidor.usuariosPorCanal.get(canal).remove(username);
+                    Servidor.enviarAMensajesCanal(canal, username + " ha salido del canal.");
+                }
+                clienteSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

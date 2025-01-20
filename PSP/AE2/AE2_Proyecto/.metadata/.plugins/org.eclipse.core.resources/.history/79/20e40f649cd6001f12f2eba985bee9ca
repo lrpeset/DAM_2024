@@ -1,0 +1,152 @@
+package es.psp.ae2;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ClientMain {
+    private static Socket socket;
+    private static PrintWriter out;
+    private static BufferedReader in;
+    private static String channel;
+    private static String username;
+
+    public static void main(String[] args) throws IOException {
+        // Solicitar la IP y el puerto al usuario
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        
+        System.out.print("IP: ");
+        String serverIP = reader.readLine().trim();
+        
+        System.out.print("Puerto: ");
+        int serverPort = Integer.parseInt(reader.readLine().trim());
+
+        // Establecer la conexión con el servidor
+        socket = new Socket(serverIP, serverPort);
+        System.out.println("Conexión establecida con el servidor.");
+
+        // Establecer streams de entrada y salida
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream(), true);
+
+        // Mostrar timestamp y los canales disponibles
+        Date now = new Date();
+        String timestamp = String.format("%1$td/%1$tM-%1$tH:%1$tM:%1$tS", now);
+        out.println("Canales disponibles:");
+
+        // Mostrar la lista de canales disponibles
+        List<String> channels = loadChannels("src/channels.txt");  // Asegúrate de que este archivo exista
+        System.out.println(timestamp + ": Canales disponibles: " + channels);
+
+        // Solicitar canal al cliente
+        System.out.print("Selecciona un canal por su número (1-4): ");
+        channel = reader.readLine().trim();
+        
+        // Enviar la selección del canal al servidor
+        out.println(channel);
+
+        // Solicitar nombre de usuario
+        username = promptUsername(in, out, reader);
+
+        // Mostrar mensaje de bienvenida
+        String welcomeMessage = in.readLine();
+        System.out.println(welcomeMessage);
+
+        // Ahora que el cliente está listo, permitir el envío de mensajes
+        promptForMessage(reader);
+    }
+
+    // Cargar los canales desde el archivo
+    private static List<String> loadChannels(String fileName) throws IOException {
+        List<String> channels = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channels.add(line.trim());  // Agregar canal al listado
+            }
+        }
+        return channels;
+    }
+
+    // Función para pedir y verificar el nombre de usuario
+    private static String promptUsername(BufferedReader in, PrintWriter out, BufferedReader reader) throws IOException {
+        String username;
+        boolean usernameTaken = false;
+
+        do {
+            System.out.print("Introduce tu nombre de usuario (sin espacios): ");
+            username = reader.readLine().trim();
+            out.println(username);  // Enviar nombre de usuario al servidor
+
+            // Recibir la respuesta del servidor
+            String response = in.readLine();
+            if ("true".equalsIgnoreCase(response)) {
+                usernameTaken = true;
+                System.out.println("El usuario ya existe, elige otro nombre.");
+            } else {
+                usernameTaken = false;
+            }
+        } while (usernameTaken);
+        
+        return username;
+    }
+
+    // Método para permitir el envío de mensajes
+    private static void promptForMessage(BufferedReader reader) {
+        // Mostrar mensaje inicial en la consola para pulsar Enter
+        System.out.println("Pulsa 'Enter' para introducir mensajes");
+
+        // Esperar a que el cliente presione Enter en la consola
+        while (true) {
+            try {
+                String line = reader.readLine();
+                if (line.isEmpty()) {  // Si el usuario pulsa Enter
+                    // Abre la ventana de entrada de mensaje
+                    openMessageInputDialog();
+                    break;  // Rompe el bucle para evitar repetidos diálogos
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Método para mostrar el cuadro de texto de entrada
+    private static void openMessageInputDialog() {
+        // Crear una ventana emergente para introducir el mensaje
+        JFrame frame = new JFrame("Enviar mensaje");
+        frame.setSize(300, 150);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        // Crear un campo de texto para introducir el mensaje
+        JTextField messageField = new JTextField();
+        panel.add(new JLabel("Escribe tu mensaje:"));
+        panel.add(messageField);
+
+        // Crear un botón OK para enviar el mensaje
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(e -> {
+            String message = messageField.getText();
+            if (!message.isEmpty()) {
+                out.println(message);  // Enviar el mensaje al servidor
+                System.out.println("Mensaje enviado: " + message);
+            }
+            frame.dispose();  // Cerrar la ventana de mensaje
+        });
+        panel.add(okButton);
+
+        // Crear un botón Cancelar para cerrar la ventana sin enviar
+        JButton cancelButton = new JButton("Cancelar");
+        cancelButton.addActionListener(e -> frame.dispose());
+        panel.add(cancelButton);
+
+        // Hacer visible la ventana
+        frame.setVisible(true);
+    }
+}

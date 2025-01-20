@@ -1,0 +1,107 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class ClientMain {
+    public static void main(String[] args) throws IOException {
+        // Escáner para la entrada de la consola
+        Scanner scanner = new Scanner(System.in);
+
+        // Pedir IP y puerto
+        System.out.print("IP: ");
+        String serverAddress = scanner.nextLine();
+
+        System.out.print("Port: ");
+        int port = Integer.parseInt(scanner.nextLine());
+
+        // Establecer la conexión al servidor
+        Socket socket = new Socket(serverAddress, port);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+        // Mostrar mensaje de conexión
+        System.out.println("Conexión establecida con el servidor.");
+
+        // Recibir y mostrar los canales disponibles con timestamp
+        String line;
+        System.out.println(getTimestamp() + " Canales disponibles:");
+        while ((line = in.readLine()) != null) {
+            if (line.equals("OK")) {
+                break;
+            }
+            System.out.println(line);
+        }
+
+        // Solicitar que el cliente elija un canal
+        int channelChoice = -1;
+        while (channelChoice < 1 || channelChoice > 4) {
+            System.out.print("Selecciona un canal por su número (1-4): ");
+            channelChoice = Integer.parseInt(scanner.nextLine());
+            if (channelChoice < 1 || channelChoice > 4) {
+                System.out.println("Opción inválida. Por favor, selecciona un número entre 1 y 4.");
+            }
+        }
+        out.println(channelChoice); // Enviar elección de canal al servidor
+
+        // Recibir confirmación del servidor de que el canal ha sido aceptado
+        String response = in.readLine();
+        if (response.equals("Channel accepted")) {
+            System.out.println("Canal elegido: " + channelChoice);
+        } else {
+            System.out.println("Error al seleccionar canal.");
+            socket.close();
+            return;
+        }
+
+        // Solicitar nombre de usuario
+        String username = "";
+        boolean usernameTaken = false;
+        while (true) {
+            System.out.print("Introduce tu nombre de usuario (sin espacios): ");
+            username = scanner.nextLine();
+            out.println(username);
+            response = in.readLine(); // Leer la respuesta del servidor
+            usernameTaken = response.equals("true"); // Si el nombre está en uso, el servidor devuelve "true"
+            
+            if (!usernameTaken) {
+                System.out.println("Nombre de usuario aceptado.");
+                break;
+            } else {
+                System.out.println("El nombre de usuario ya está en uso, por favor elige otro.");
+            }
+        }
+
+        // Hilo para enviar mensajes
+        new Thread(() -> {
+            while (true) {
+                String message = scanner.nextLine();
+                if (message.equals("exit")) {
+                    out.println("exit");
+                    break;
+                }
+                out.println(message);
+            }
+        }).start();
+
+        // Hilo para recibir mensajes
+        new Thread(() -> {
+            try {
+                String message;
+                while ((message = in.readLine()) != null) {
+                    // Solo los mensajes de otros usuarios
+                    System.out.println(message);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private static String getTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(new Date());
+    }
+}

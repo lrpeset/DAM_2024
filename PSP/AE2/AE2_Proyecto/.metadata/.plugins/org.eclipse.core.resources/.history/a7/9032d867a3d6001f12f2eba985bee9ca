@@ -1,0 +1,92 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class ClientMain {
+    public static void main(String[] args) throws IOException {
+        // Pedir la IP y el puerto
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("IP: ");
+        String serverAddress = scanner.nextLine();
+
+        System.out.print("Port: ");
+        int port = Integer.parseInt(scanner.nextLine());
+
+        Socket socket = new Socket(serverAddress, port);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+        // Mostrar mensaje con timestamp
+        System.out.println(getTimestamp() + " Conexión establecida con el servidor.");
+
+        // Recibir los canales disponibles
+        String line;
+        while ((line = in.readLine()) != null) {
+            System.out.println(getTimestamp() + " " + line);
+            if (line.equals("OK")) {
+                break;
+            }
+        }
+
+        // Seleccionar un canal
+        int channelChoice = -1;
+        while (channelChoice < 1 || channelChoice > 4) {
+            System.out.print("Selecciona un canal por su número (1-4): ");
+            channelChoice = Integer.parseInt(scanner.nextLine());
+            if (channelChoice < 1 || channelChoice > 4) {
+                System.out.println("Opción inválida. Por favor, selecciona un número entre 1 y 4.");
+            }
+        }
+        out.println(channelChoice);
+
+        // Ingresar nombre de usuario
+        String username = "";
+        boolean usernameTaken = false;
+        while (true) {
+            System.out.print("Introduce tu nombre de usuario (sin espacios): ");
+            username = scanner.nextLine();
+            out.println(username);
+            usernameTaken = in.readLine().equals("true"); // Si el nombre está en uso, el servidor devuelve "true"
+            
+            if (!usernameTaken) {
+                System.out.println(getTimestamp() + " Nombre de usuario aceptado.");
+                break;
+            } else {
+                System.out.println(getTimestamp() + " El nombre de usuario ya está en uso, por favor elige otro.");
+            }
+        }
+
+        // Hilo para enviar mensajes
+        new Thread(() -> {
+            while (true) {
+                String message = scanner.nextLine();
+                if (message.equals("exit")) {
+                    out.println("exit");
+                    break;
+                }
+                out.println(message);
+            }
+        }).start();
+
+        // Hilo para recibir mensajes
+        new Thread(() -> {
+            try {
+                String message;
+                while ((message = in.readLine()) != null) {
+                    System.out.println(getTimestamp() + " " + message);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private static String getTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(new Date());
+    }
+}

@@ -1,0 +1,67 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+
+public class Cliente {
+    private Socket socket;
+    private PrintWriter output;
+    private BufferedReader input;
+
+    public Cliente(String host, int port) {
+        try {
+            this.socket = new Socket(host, port);
+            this.output = new PrintWriter(socket.getOutputStream(), true);
+            this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void enviarMensaje(String mensaje) {
+        output.println(mensaje);
+    }
+
+    public String leerMensaje() {
+        try {
+            return input.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void main(String[] args) {
+        Cliente cliente = new Cliente("localhost", 5000);
+        BufferedReader consola = new BufferedReader(new InputStreamReader(System.in));
+
+        // Recibir la lista de canales desde el servidor
+        String respuesta = cliente.leerMensaje();
+        System.out.println(respuesta); // Mostrar la lista de canales disponibles
+
+        try {
+            // Seleccionar un canal
+            System.out.print("Selecciona un canal (número 1-4): ");
+            String canalSeleccionado = consola.readLine();
+            cliente.enviarMensaje(canalSeleccionado);  // Enviar el número del canal
+
+            // Esperar la respuesta del servidor con el nombre del canal
+            respuesta = cliente.leerMensaje();
+            System.out.println(respuesta);  // Mostrar bienvenida al canal
+
+            // Solicitar nombre de usuario
+            respuesta = cliente.leerMensaje();
+            System.out.println(respuesta);  // Mostrar la solicitud para el nombre de usuario
+
+            System.out.print("Introduce tu nombre de usuario: ");
+            String username = consola.readLine();
+            cliente.enviarMensaje(username);  // Enviar el nombre de usuario
+
+            // Mostrar la respuesta del servidor (si es exitoso o si el nombre está en uso)
+            respuesta = cliente.leerMensaje();
+            System.out.println(respuesta);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }

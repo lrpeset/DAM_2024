@@ -1,0 +1,43 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Servidor {
+    private static final int PORT = 12345;
+    private static final Map<String, List<ServidorHilo>> canales = new HashMap<>();
+
+    public static void main(String[] args) {
+        cargarCanales();
+        
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Servidor iniciado en el puerto " + PORT);
+
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
+                new Thread(new ServidorHilo(clientSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void cargarCanales() {
+        try (BufferedReader br = new BufferedReader(new FileReader("canales.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split("-");
+                canales.put(parts[1].trim(), new ArrayList<>());
+            }
+        } catch (IOException e) {
+            System.err.println("Error al cargar canales.");
+            e.printStackTrace();
+        }
+    }
+
+    public static Map<String, List<ServidorHilo>> getCanales() {
+        return canales;
+    }
+}

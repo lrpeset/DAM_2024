@@ -1,0 +1,99 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ServidorHilo extends Thread {
+    private BufferedReader input;
+    private PrintWriter output;
+    private Socket clienteSocket;
+
+    // Mapa global para almacenar los usuarios conectados a cada canal
+    private static Map<String, List<String>> canalesConectados = new HashMap<>();
+
+    public ServidorHilo(Socket socket) {
+        this.clienteSocket = socket;
+        try {
+            this.input = new BufferedReader(new InputStreamReader(clienteSocket.getInputStream()));
+            this.output = new PrintWriter(clienteSocket.getOutputStream(), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            // Leer canales desde archivo
+            List<String> canales = leerCanales();
+            
+            // Enviar la lista de canales al cliente solo una vez
+            output.println("Canales disponibles:");
+            for (int i = 0; i < canales.size(); i++) {
+                output.println((i + 1) + "- " + canales.get(i));
+            }
+
+            // Esperar la selección del canal
+            String canalSeleccionado = input.readLine();
+            int canalIndex = Integer.parseInt(canalSeleccionado) - 1;
+            // Verificar si el canal existe
+            if (canalIndex >= 0 && canalIndex < canales.size()) {
+                String canal = canales.get(canalIndex);
+                // Si el canal existe, procesar la solicitud del nombre de usuario
+                output.println("Selecciona un nombre de usuario:");
+
+                // Leer nombre de usuario desde cliente
+                String username = input.readLine();
+
+                // Verificar si el nombre de usuario ya está en uso en el canal
+                if (canalesConectados.containsKey(canal) && canalesConectados.get(canal).contains(username)) {
+                    output.println("El nombre de usuario ya está en uso. Por favor elige otro.");
+                } else {
+                    // Si el nombre no está en uso, añadir al mapa de usuarios
+                    canalesConectados.computeIfAbsent(canal, k -> new ArrayList<>()).add(username);
+                    output.println("USERNAME_OK");
+                    output.println("Bienvenido " + username + " al canal " + canal);
+                }
+            } else {
+                output.println("Canal no encontrado. Por favor elige un canal válido.");
+            }
+
+            // Aquí puedes continuar con la gestión de mensajes, desconexiones, etc.
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                clienteSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private List<String> leerCanales() {
+        List<String> canales = new ArrayList<>();
+        // Cargar los canales desde un archivo o de una fuente específica
+        try (BufferedReader br = new BufferedReader(new FileReader("src/channels.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                // Verificar que la línea tenga un guion (-)
+                if (line.contains("-")) {
+                    String[] parts = line.split("-");
+                    if (parts.length > 1) {  // Asegurarse de que haya al menos dos elementos
+                        canales.add(parts[1].trim());  // Obtener solo el nombre del canal
+                    } else {
+                        System.out.println("Formato incorrecto en la línea: " + line);
+                    }
+                } else {
+                    System.out.println("Formato incorrecto en la línea: " + line);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return canales;
+    }
+
+}

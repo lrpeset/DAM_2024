@@ -1,0 +1,137 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import javax.swing.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class Cliente {
+	private Socket socket;
+	private BufferedReader input;
+	private PrintWriter output;
+	private String canalActual;
+	private String nombreUsuario;
+
+	public Cliente(String serverIp, int serverPort) {
+		try {
+			// Conectar al servidor
+			socket = new Socket(serverIp, serverPort);
+			input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			output = new PrintWriter(socket.getOutputStream(), true);
+
+			System.out.println("Conectado al servidor en " + serverIp + ":" + serverPort);
+
+			// Llamar al método para iniciar la conexión y validación
+			iniciarConexión();
+
+		} catch (IOException e) {
+			System.err.println("Error al conectar al servidor: " + e.getMessage());
+		}
+	}
+
+	public void iniciarConexión() {
+		try {
+			// Solicitar y leer canal
+			output.println("Selecciona un canal (número):");
+			String canalSeleccionado = input.readLine().trim();
+			int canalIndice;
+			try {
+				canalIndice = Integer.parseInt(canalSeleccionado) - 1; // Convertir a índice 0-based
+				if (canalIndice < 0 || canalIndice >= 4) { // Suponiendo que hay 4 canales
+					output.println("Canal no válido. Desconectando.");
+					cerrarConexion();
+					return;
+				}
+			} catch (NumberFormatException e) {
+				output.println("Entrada no válida. Por favor, ingresa un número válido.");
+				cerrarConexion();
+				return;
+			}
+
+			canalActual = "canal" + canalIndice; // Se asigna el canal
+
+			// Solicitar nombre de usuario
+			output.println("Introduce tu nombre de usuario:");
+			while (true) {
+				nombreUsuario = input.readLine(); // Leer nombre de usuario desde consola
+				synchronized (this) { // Usar sincronización por si hay concurrencia
+					// Validación de usuario (esto debe adaptarse a tu lógica de canales)
+					if (!nombreUsuario.isEmpty()) {
+						break; // Nombre de usuario válido
+					}
+				}
+				output.println("Nombre de usuario ya en uso o inválido. Por favor, elige otro:");
+			}
+
+			// Confirmación de la conexión
+			output.println("Conexión exitosa al canal: " + canalActual);
+			enviarATodos("Usuario " + nombreUsuario + " se ha unido al canal.");
+
+			// Ahora que la conexión está establecida y validada, lanzar hilos para recibir
+			// y enviar mensajes
+			ClienteHilo receiver = new ClienteHilo(input);
+			Thread receiverThread = new Thread(receiver);
+			receiverThread.start();
+
+			// Lanzar la función para enviar mensajes al servidor
+			enviarMensajes();
+
+		} catch (IOException e) {
+			System.err.println("Error al conectar al servidor: " + e.getMessage());
+		}
+	}
+
+	private void enviarMensajes() {
+		while (true) {
+			// Mostrar ventana emergente para escribir mensaje
+			String mensaje = JOptionPane.showInputDialog(null, "Escribe tu mensaje:", "Enviar mensaje",
+					JOptionPane.PLAIN_MESSAGE);
+
+			if (mensaje == null || mensaje.trim().isEmpty()) {
+				System.out.println("No se envió ningún mensaje.");
+				continue;
+			}
+
+			// Agregar marca de tiempo
+			String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+			output.println(mensaje);
+			System.out.println("[" + timestamp + "] Tú: " + mensaje);
+		}
+	}
+
+	private void enviarATodos(String mensaje) {
+		// Aquí puedes enviar el mensaje a todos los usuarios del canal, si es necesario
+		// Lógica de envío (puedes agregar la lógica del servidor aquí)
+		System.out.println("Enviando mensaje a todos: " + mensaje);
+	}
+
+	private void cerrarConexion() throws IOException {
+		if (socket != null)
+			socket.close();
+		if (input != null)
+			input.close();
+		if (output != null)
+			output.close();
+		System.out.println("Conexión cerrada.");
+	}
+
+	public static void main(String[] args) {
+		try {
+			BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+
+			// Pedir IP del servidor
+			System.out.print("Introduce la IP del servidor (localhost): ");
+			String serverIp = consoleInput.readLine();
+
+			// Pedir puerto del servidor
+			System.out.print("Introduce el puerto del servidor (5000): ");
+			int serverPort = Integer.parseInt(consoleInput.readLine());
+
+			// Crear instancia del cliente
+			new Cliente(serverIp, serverPort);
+		} catch (IOException e) {
+			System.err.println("Error en la entrada del cliente: " + e.getMessage());
+		}
+	}
+}

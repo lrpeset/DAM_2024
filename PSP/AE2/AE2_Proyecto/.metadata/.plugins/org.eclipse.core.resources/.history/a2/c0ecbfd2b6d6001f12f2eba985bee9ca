@@ -1,0 +1,23 @@
+import java.io.*;
+import java.util.*;
+
+public class Servidor {
+    
+    private static final String FILE_CANALS = "src/channels.txt"; // Ruta del archivo de canales
+    
+    // Método para leer los canales desde el archivo
+    public static List<String> obtenerCanales() {
+        List<String> canales = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE_CANALS))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                canales.add(line); // Agrega cada canal al listado
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return canales;
+    }
+
+    // Aquí van otros métodos como `verificarNombreUsuario`, `enviarAMensajesCanal`, etc.
+}

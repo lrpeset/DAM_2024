@@ -1,0 +1,31 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+public class ClienteHilo implements Runnable {
+    private Cliente cliente;
+
+    public ClienteHilo(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    @Override
+    public void run() {
+        String mensaje;
+        BufferedReader consola = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            while ((mensaje = cliente.leerMensaje()) != null) {
+                System.out.println("Servidor: " + mensaje);  // Mostrar mensaje en consola
+
+                // Leer y enviar un nuevo mensaje
+                System.out.print("Escribe un mensaje: ");
+                String respuesta = consola.readLine();
+                cliente.enviarMensaje(respuesta);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

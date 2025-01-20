@@ -1,0 +1,92 @@
+public class ServerThread extends Thread {
+    private Socket clientSocket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private Map<String, List<ServerThread>> channels;
+    private Set<String> users;  // Conjunto de usuarios
+    private String channel;
+    private String username;
+
+    public ServerThread(Socket clientSocket, Map<String, List<ServerThread>> channels, Set<String> users) {
+        this.clientSocket = clientSocket;
+        this.channels = channels;
+        this.users = users;  // Recibimos la lista de usuarios
+    }
+
+    public void run() {
+        try {
+            // Establecer los streams de entrada y salida
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+            // Solicitar y verificar el nombre de usuario
+            while (true) {
+                out.println("Introduce tu nombre de usuario:");
+                username = in.readLine();
+                synchronized (users) {
+                    if (users.contains(username)) {
+                        out.println("El nombre de usuario ya está en uso. Por favor, introduce otro.");
+                    } else {
+                        users.add(username);  // Agregar usuario al conjunto
+                        break;  // Si el nombre es único, salimos del bucle
+                    }
+                }
+            }
+
+            // Leer el canal al que se desea conectar
+            out.println("Selecciona un canal: ");
+            channel = in.readLine();
+            if (!channels.containsKey(channel)) {
+                out.println("Canal no válido.");
+                return;
+            }
+
+            // Agregar al cliente al canal
+            synchronized (channels) {
+                channels.get(channel).add(this);
+            }
+
+            // Mensaje de bienvenida
+            out.println("¡Bienvenido al canal " + channel + ", " + username + "!");
+
+            // Leer mensajes enviados por el cliente
+            String message;
+            while ((message = in.readLine()) != null) {
+                if (message.equalsIgnoreCase("exit")) {
+                    break;
+                }
+                // Enviar el mensaje a todos los clientes en el canal
+                synchronized (channels) {
+                    for (ServerThread client : channels.get(channel)) {
+                        client.out.println(username + ": " + message);
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                // Cerrar conexiones
+                if (in != null) in.close();
+                if (out != null) out.close();
+                if (clientSocket != null) clientSocket.close();
+                
+                // Eliminar usuario de la lista
+                synchronized (users) {
+                    users.remove(username);
+                }
+                
+                // Eliminar cliente del canal
+                synchronized (channels) {
+                    if (channels.containsKey(channel)) {
+                        channels.get(channel).remove(this);
+                    }
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

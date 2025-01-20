@@ -1,0 +1,94 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import javax.swing.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class Cliente {
+	private Socket socket;
+	private BufferedReader input;
+	private PrintWriter output;
+
+	public Cliente(String serverIp, int serverPort) {
+		try {
+			socket = new Socket(serverIp, serverPort);
+			input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			output = new PrintWriter(socket.getOutputStream(), true);
+
+			System.out.println("Conectado al servidor en " + serverIp + ":" + serverPort);
+
+			ClienteHilo receiver = new ClienteHilo(input);
+			Thread receiverThread = new Thread(receiver);
+			receiverThread.start();
+
+			enviarMensajes();
+		} catch (IOException e) {
+			System.err.println("Error al conectar al servidor: " + e.getMessage());
+		}
+	}
+
+	private void enviarMensajes() {
+	    try {
+	        BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+	        while (true) {
+	            String inputLine = consoleInput.readLine();
+
+	            if (inputLine == null || inputLine.trim().isEmpty()) {
+	                String mensaje = JOptionPane.showInputDialog(null, "Escribe tu mensaje:", "Enviar mensaje", JOptionPane.PLAIN_MESSAGE);
+
+	                if (mensaje == null || mensaje.trim().isEmpty()) {
+	                    System.out.println("No se envió ningún mensaje.");
+	                    continue;
+	                }
+
+	                if (mensaje.equalsIgnoreCase("whois")) {
+	                    output.println("whois");
+	                    continue;
+	                } else if (mensaje.equalsIgnoreCase("channels")) {
+	                    output.println("channels");
+	                    continue;
+	                } else if (mensaje.equalsIgnoreCase("exit")) {
+	                    output.println("exit");
+	                    break;
+	                } else if (mensaje.startsWith("@canal")) {
+	                    String[] partes = mensaje.split(" ", 2);
+	                    if (partes.length == 2) {
+	                        String canalDestino = partes[0].substring(7);
+	                        String mensajeCanal = partes[1];
+	                        output.println("@canal" + canalDestino + " " + mensajeCanal);
+	                    } else {
+	                        System.out.println("El formato de mensaje para '@canalX' no es válido.");
+	                        continue;
+	                    }
+	                } else {
+	                    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+	                    output.println(mensaje);
+	                    System.out.println("[" + timestamp + "] Tú: " + mensaje);
+	                }
+	            }
+	        }
+	    } catch (IOException e) {
+	        System.err.println("Error al leer entrada de consola: " + e.getMessage());
+	    }
+	}
+
+
+
+	public static void main(String[] args) {
+		try {
+			BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+
+			System.out.print("Introduce la IP del servidor (localhost): ");
+			String serverIp = consoleInput.readLine();
+
+			System.out.print("Introduce el puerto del servidor (5000): ");
+			int serverPort = Integer.parseInt(consoleInput.readLine());
+
+			new Cliente(serverIp, serverPort);
+		} catch (IOException e) {
+			System.err.println("Error en la entrada del cliente: " + e.getMessage());
+		}
+	}
+}

@@ -1,0 +1,104 @@
+package es.psp.ae2;
+
+public class ServerThread extends Thread {
+    private Socket socket;
+    private Map<String, List<ServerThread>> channels;
+    private String username;
+    private String currentChannel;
+    private BufferedReader in;
+    private PrintWriter out;
+
+    public ServerThread(Socket socket, Map<String, List<ServerThread>> channels) {
+        this.socket = socket;
+        this.channels = channels;
+    }
+
+    @Override
+    public void run() {
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+
+            out.println("Bienvenido al servidor. Seleccione un canal: " + channels.keySet());
+
+            currentChannel = in.readLine();
+            if (!channels.containsKey(currentChannel)) {
+                out.println("Canal no válido. Desconexión.");
+                socket.close();
+                return;
+            }
+
+            out.println("Ingrese su nombre de usuario:");
+            username = in.readLine();
+            synchronized (channels.get(currentChannel)) {
+                while (channels.get(currentChannel).stream().anyMatch(t -> t.username.equals(username))) {
+                    out.println("Nombre en uso. Ingrese otro nombre:");
+                    username = in.readLine();
+                }
+                channels.get(currentChannel).add(this);
+            }
+
+            out.println("OK. Bienvenido al canal " + currentChannel);
+            broadcastMessage("Usuario " + username + " se ha unido al canal.");
+
+            String message;
+            while ((message = in.readLine()) != null) {
+                handleCommand(message);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            disconnect();
+        }
+    }
+
+    private void handleCommand(String message) {
+        if (message.equalsIgnoreCase("whois")) {
+            sendWhois();
+        } else if (message.startsWith("@")) {
+            sendToChannel(message);
+        } else if (message.equalsIgnoreCase("exit")) {
+            disconnect();
+        } else {
+            broadcastMessage(username + ": " + message);
+        }
+    }
+
+    private void sendWhois() {
+        List<String> users = channels.get(currentChannel).stream()
+            .map(t -> t.username).toList();
+        out.println("Usuarios conectados: " + users);
+    }
+
+    private void sendToChannel(String message) {
+        String[] parts = message.split(" ", 2);
+        String targetChannel = parts[0].substring(1);
+        String msg = parts.length > 1 ? parts[1] : "";
+
+        if (channels.containsKey(targetChannel)) {
+            for (ServerThread client : channels.get(targetChannel)) {
+                client.out.println("[Canal " + targetChannel + "] " + username + ": " + msg);
+            }
+        } else {
+            out.println("Canal no encontrado.");
+        }
+    }
+
+    private void broadcastMessage(String message) {
+        for (ServerThread client : channels.get(currentChannel)) {
+            client.out.println(message);
+        }
+    }
+
+    private void disconnect() {
+        try {
+            synchronized (channels.get(currentChannel)) {
+                channels.get(currentChannel).remove(this);
+            }
+            socket.close();
+            broadcastMessage("Usuario " + username + " ha salido del canal.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

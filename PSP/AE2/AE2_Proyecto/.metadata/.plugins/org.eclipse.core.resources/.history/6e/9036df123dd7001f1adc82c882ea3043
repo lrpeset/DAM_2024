@@ -1,0 +1,27 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class ClienteHilo implements Runnable {
+    private BufferedReader input;
+
+    public ClienteHilo(BufferedReader input) {
+        this.input = input;
+    }
+
+    @Override
+    public void run() {
+        try {
+            String mensaje;
+            while ((mensaje = input.readLine()) != null) {
+                // Agregar marca de tiempo al mensaje recibido
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                System.out.println("[" + timestamp + "] Servidor: " + mensaje);
+            }
+        } catch (IOException e) {
+            System.err.println("Error al recibir mensajes del servidor: " + e.getMessage());
+        }
+    }
+}

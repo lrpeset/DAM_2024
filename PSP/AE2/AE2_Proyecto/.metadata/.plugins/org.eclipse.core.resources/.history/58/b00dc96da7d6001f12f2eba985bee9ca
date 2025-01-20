@@ -1,0 +1,97 @@
+package es.psp.ae2;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ClienteHilo extends Thread {
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private String canal;
+    private String username;
+
+    public ClienteHilo(Socket socket) {
+        this.socket = socket;
+        try {
+            this.out = new PrintWriter(socket.getOutputStream(), true);
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        try {
+            // Enviar canales disponibles al cliente
+            String canalesDisponibles = String.join("\n", Servidor.listaCanales);
+            out.println(canalesDisponibles);
+
+            // Leer el canal seleccionado
+            canal = in.readLine();
+            if (!Servidor.listaCanales.contains(canal)) {
+                out.println("Canal no válido.");
+                return;
+            }
+
+            out.println("Elige un nombre de usuario:");
+            username = in.readLine();
+
+            // Verificar nombre de usuario
+            if (Servidor.canales.get(canal) == null) {
+                Servidor.canales.put(canal, new ArrayList<>());
+            }
+
+            synchronized (Servidor.canales.get(canal)) {
+                for (PrintWriter pw : Servidor.canales.get(canal)) {
+                    if (pw.equals(out)) {
+                        out.println("Nombre de usuario ya tomado. Intenta otro.");
+                        return;
+                    }
+                }
+
+                Servidor.canales.get(canal).add(out);
+                out.println("OK");
+
+                // Escuchar mensajes del cliente
+                String mensaje;
+                while ((mensaje = in.readLine()) != null) {
+                    manejarMensaje(mensaje);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            // Cerrar conexión
+            try {
+                if (canal != null && Servidor.canales.containsKey(canal)) {
+                    synchronized (Servidor.canales.get(canal)) {
+                        Servidor.canales.get(canal).remove(out);
+                    }
+                }
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void manejarMensaje(String mensaje) {
+        if (mensaje.equals("whois")) {
+            synchronized (Servidor.canales.get(canal)) {
+                out.println("Usuarios en " + canal + ": " + Servidor.canales.get(canal).size());
+            }
+        } else if (mensaje.equals("exit")) {
+            synchronized (Servidor.canales.get(canal)) {
+                Servidor.canales.get(canal).remove(out);
+            }
+            out.println("Saliendo...");
+        } else {
+            synchronized (Servidor.canales.get(canal)) {
+                for (PrintWriter pw : Servidor.canales.get(canal)) {
+                    pw.println("[" + username + "] " + mensaje);
+                }
+            }
+        }
+    }
+}
+

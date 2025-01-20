@@ -1,0 +1,63 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+
+public class ClientMain {
+
+    public static void main(String[] args) throws IOException {
+        // Solicitar la IP y el puerto del servidor
+        BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
+        
+        System.out.println("Introduce la IP del servidor:");
+        String ip = userInput.readLine();
+        
+        System.out.println("Introduce el puerto del servidor:");
+        int port = Integer.parseInt(userInput.readLine());
+
+        // Establecer la conexión con el servidor
+        Socket socket = new Socket(ip, port);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+        // Cargar y mostrar los canales
+        String channelList;
+        while ((channelList = in.readLine()) != null) {
+            System.out.println(channelList);  // Lista de canales
+            break;  // Mostrar solo una vez la lista
+        }
+
+        // Solicitar al cliente que seleccione un canal
+        System.out.println("Selecciona un canal: ");
+        String channel = userInput.readLine();
+        out.println(channel);
+
+        // Solicitar nombre de usuario hasta que sea único
+        String username;
+        while (true) {
+            System.out.println(in.readLine());  // "Introduce tu nombre de usuario:"
+            username = userInput.readLine();
+            out.println(username);
+
+            String response = in.readLine();
+            if (response.equals("El nombre de usuario ya está en uso. Por favor, introduce otro.")) {
+                System.out.println(response);
+            } else {
+                break;  // Nombre de usuario válido, salimos del bucle
+            }
+        }
+
+        // Ahora el cliente puede enviar mensajes
+        System.out.println("Puedes empezar a enviar mensajes. Escribe 'exit' para salir.");
+
+        String message;
+        while ((message = userInput.readLine()) != null) {
+            out.println(message);
+            if (message.equalsIgnoreCase("exit")) {
+                break;
+            }
+        }
+
+        socket.close();
+    }
+}

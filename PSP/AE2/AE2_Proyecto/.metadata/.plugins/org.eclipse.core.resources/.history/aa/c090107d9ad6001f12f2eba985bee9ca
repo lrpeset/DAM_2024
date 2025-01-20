@@ -1,0 +1,69 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+public class ClientMain {
+
+    public static void main(String[] args) {
+        try {
+            BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
+
+            // Pedir IP y puerto
+            System.out.print("IP: ");
+            String serverIp = "localhost";  // "localhost" fijo
+            System.out.print("Puerto: ");
+            int port = 5000;  // Puerto fijo
+
+            Socket socket = new Socket(serverIp, port);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Mostrar timestamp y canales disponibles
+            String timestamp = new SimpleDateFormat("dd/MM-HH:mm:ss").format(new Date());
+            System.out.println(timestamp + ": Canales disponibles: " + in.readLine());
+
+            // Seleccionar canal
+            System.out.print("Selecciona un canal por su número (1-4): ");
+            String selectedChannel = userInput.readLine();
+            out.println(selectedChannel); // Enviar la elección del canal al servidor
+
+            // Solicitar nombre de usuario
+            String username = "";
+            boolean usernameExists;
+            do {
+                System.out.print("Indica tu nombre de usuario (sin espacios): ");
+                username = userInput.readLine();
+                out.println(username); // Enviar nombre al servidor
+                // Verificar si el nombre ya existe
+                usernameExists = Boolean.parseBoolean(in.readLine());
+                if (usernameExists) {
+                    System.out.println("El usuario ya existe, elige otro nombre.");
+                }
+            } while (usernameExists);  // Continuar pidiendo nombre si existe
+
+            System.out.println("Conectado como: " + username);
+
+            // Comunicación en el canal seleccionado
+            String message;
+            while (true) {
+                System.out.print("Escribe un mensaje (o 'exit' para salir): ");
+                message = userInput.readLine();
+                if ("exit".equalsIgnoreCase(message)) {
+                    break;
+                }
+                out.println(message);  // Enviar mensaje al servidor
+            }
+
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

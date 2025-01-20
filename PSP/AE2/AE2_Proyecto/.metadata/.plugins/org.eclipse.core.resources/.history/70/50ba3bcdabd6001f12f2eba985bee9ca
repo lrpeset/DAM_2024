@@ -1,0 +1,42 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Servidor {
+    private static final String CHANNELS_FILE = "src/channels.txt";
+    private static Map<String, Set<String>> canales = new HashMap<>();
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(5000);
+        System.out.println("Servidor en espera de conexiones...");
+
+        // Leer canales desde el archivo
+        cargarCanales();
+
+        while (true) {
+            Socket cliente = serverSocket.accept();
+            System.out.println("Cliente conectado: " + cliente.getInetAddress());
+            new Thread(new ServidorHilo(cliente)).start();
+        }
+    }
+
+    private static void cargarCanales() {
+        try (BufferedReader br = new BufferedReader(new FileReader(CHANNELS_FILE))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] partes = line.split("-");
+                if (partes.length == 2) {
+                    canales.put(partes[1].trim(), new HashSet<>());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Map<String, Set<String>> getCanales() {
+        return canales;
+    }
+}

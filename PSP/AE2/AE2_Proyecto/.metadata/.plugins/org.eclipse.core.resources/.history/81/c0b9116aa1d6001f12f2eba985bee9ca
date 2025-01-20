@@ -1,0 +1,87 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ServerThread extends Thread {
+    private static final Set<String> activeUsers = new HashSet<>(); // Para almacenar los usuarios activos
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private String username;
+    private String channel;
+
+    public ServerThread(Socket socket) {
+        this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            out.println("Conexión establecida con el servidor.");
+
+            // Cargar canales disponibles desde un archivo
+            List<String> channels = loadChannels("src/channels.txt");
+            out.println("Canales disponibles:");
+            for (int i = 0; i < channels.size(); i++) {
+                out.println((i + 1) + ". " + channels.get(i));
+            }
+
+            // Pedir al cliente que seleccione un canal
+            out.print("Selecciona un canal por su número (1-" + channels.size() + "): ");
+            channel = in.readLine().trim();
+            out.println("Canal seleccionado: " + channel);
+
+            // Pedir al cliente el nombre de usuario
+            boolean usernameTaken;
+            do {
+                out.print("Introduce tu nombre de usuario (sin espacios): ");
+                username = in.readLine().trim();
+                usernameTaken = activeUsers.contains(username);
+
+                if (usernameTaken) {
+                    out.println("true");  // El nombre de usuario ya está en uso
+                } else {
+                    activeUsers.add(username);  // Registrar el nombre de usuario
+                    out.println("false");  // Nombre de usuario disponible
+                }
+            } while (usernameTaken);
+
+            out.println("Bienvenido, " + username);
+
+            // Enviar mensajes al canal
+            String message;
+            while ((message = in.readLine()) != null) {
+                if (message.trim().length() > 0) {
+                    System.out.println("Mensaje de " + username + ": " + message);
+                    // Enviar mensaje a todos los clientes en el canal (esto podría necesitar ser implementado dependiendo del canal)
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (username != null) {
+                    activeUsers.remove(username);  // Eliminar usuario de la lista cuando se desconecte
+                }
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private List<String> loadChannels(String fileName) throws IOException {
+        List<String> channels = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channels.add(line.trim());
+            }
+        }
+        return channels;
+    }
+}

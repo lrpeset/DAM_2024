@@ -1,0 +1,77 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Cliente {
+    private static final String SERVIDOR = "localhost";  // Dirección del servidor
+    private static final int PUERTO = 12345;            // Puerto del servidor
+
+    public static void main(String[] args) {
+        try (Socket socket = new Socket(SERVIDOR, PUERTO);
+             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+             Scanner scanner = new Scanner(System.in)) {
+
+            // Leer canales disponibles
+            System.out.println("Canales disponibles:");
+            String canal;
+            while ((canal = input.readLine()) != null && !canal.isEmpty()) {
+                System.out.println(canal);
+            }
+
+            // Elegir canal
+            System.out.print("Selecciona un canal: ");
+            String canalSeleccionado = scanner.nextLine();
+            output.println(canalSeleccionado);
+
+            // Elegir nombre de usuario
+            System.out.print("Introduce tu nombre de usuario: ");
+            String username = scanner.nextLine();
+            output.println(username);
+
+            // Esperar respuesta del servidor
+            String respuesta = input.readLine();
+            if ("OK".equals(respuesta)) {
+                System.out.println("Conectado al canal " + canalSeleccionado);
+            } else {
+                System.out.println("Error: " + respuesta);
+                return;
+            }
+
+            // Enviar y recibir mensajes
+            new Thread(new ReceptorMensajes(input)).start();  // Receptor de mensajes
+
+            // Enviar mensajes
+            String mensaje;
+            while (!(mensaje = scanner.nextLine()).equals("exit")) {
+                output.println(mensaje);
+            }
+            output.println("exit");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Clase para recibir mensajes
+    static class ReceptorMensajes implements Runnable {
+        private BufferedReader input;
+
+        public ReceptorMensajes(BufferedReader input) {
+            this.input = input;
+        }
+
+        @Override
+        public void run() {
+            try {
+                String mensaje;
+                while ((mensaje = input.readLine()) != null) {
+                    System.out.println(mensaje);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

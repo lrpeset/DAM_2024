@@ -1,0 +1,38 @@
+package es.psp.ae2;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ServerMain {
+    public static void main(String[] args) throws IOException {
+        int port = 12345;
+        ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Servidor iniciado en el puerto " + port);
+
+        Map<String, List<ServerThread>> channels = loadChannels("src/channels.txt");
+
+        while (true) {
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
+            new ServerThread(clientSocket, channels).start();
+        }
+    }
+
+    private static Map<String, List<ServerThread>> loadChannels(String fileName) throws IOException {
+        Map<String, List<ServerThread>> channels = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channels.put(line.trim(), new ArrayList<>());
+            }
+        }
+        return channels;
+    }
+}

@@ -1,0 +1,41 @@
+package es.psp.ae2;
+
+import java.util.*;
+
+public class Servidor {
+    // Lista de canales
+    private static final List<String> canales = Arrays.asList("1-cine", "2-música", "3-videojuegos", "4-literatura");
+
+    // Mapa para mantener los usuarios de cada canal
+    private static final Map<String, List<String>> usuariosPorCanal = new HashMap<>();
+
+    // Método para obtener la lista de canales disponibles
+    public static List<String> obtenerCanales() {
+        return canales;
+    }
+
+    // Método para obtener los usuarios de un canal específico
+    public static List<String> obtenerUsuariosCanal(String canal) {
+        return usuariosPorCanal.getOrDefault(canal, new ArrayList<>());
+    }
+
+    // Método para verificar si un nombre de usuario ya está en uso
+    public static boolean verificarNombreUsuario(String canal, String username) {
+        List<String> usuarios = obtenerUsuariosCanal(canal);
+        return !usuarios.contains(username);
+    }
+
+    // Método para agregar un usuario a un canal
+    public static void agregarUsuarioACanal(String canal, String username) {
+        usuariosPorCanal.computeIfAbsent(canal, k -> new ArrayList<>()).add(username);
+    }
+
+    // Método para enviar un mensaje a todos los usuarios de un canal
+    public static void enviarAMensajesCanal(String canal, String mensaje) {
+        List<String> usuarios = obtenerUsuariosCanal(canal);
+        for (String usuario : usuarios) {
+            // Aquí enviarías el mensaje a cada usuario, por ejemplo, mediante un PrintWriter o algo similar
+            System.out.println("Enviando mensaje a " + usuario + ": " + mensaje);
+        }
+    }
+}

@@ -1,0 +1,147 @@
+package es.psp.ae2;
+
+import javax.swing.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class ClientMain {
+    private static Socket socket;
+    private static PrintWriter out;
+    private static BufferedReader in;
+    private static String channel;
+    private static String username;
+
+ // Parte de ClientMain donde se elimina la solicitud redundante de canal
+
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        System.out.print("IP: ");
+        String serverIP = reader.readLine().trim();
+        
+        System.out.print("Puerto: ");
+        int serverPort = Integer.parseInt(reader.readLine().trim());
+
+        socket = new Socket(serverIP, serverPort);
+        System.out.println("Conexión establecida con el servidor.");
+
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream(), true);
+
+        Date now = new Date();
+        String timestamp = String.format("%1$td/%1$tM-%1$tH:%1$tM:%1$tS", now);
+
+        // Cargar canales disponibles desde el servidor
+        List<String> channels = loadChannels("src/channels.txt");
+        System.out.println(timestamp + ": Canales disponibles: ");
+        for (int i = 0; i < channels.size(); i++) {
+            System.out.println((i + 1) + ". " + channels.get(i));  // Mostrar la lista de canales
+        }
+
+        // Solicitar selección de canal
+        System.out.print("Selecciona un canal por su número (1-" + channels.size() + "): ");
+        int selectedChannel;
+        while (true) {
+            try {
+                selectedChannel = Integer.parseInt(reader.readLine().trim()) - 1; // Ajuste para índice 0
+                if (selectedChannel >= 0 && selectedChannel < channels.size()) {
+                    channel = channels.get(selectedChannel);
+                    out.println(channel);  // Enviar canal al servidor
+                    break;
+                } else {
+                    System.out.print("Canal inválido. Por favor, selecciona un canal válido: ");
+                }
+            } catch (NumberFormatException e) {
+                System.out.print("Entrada no válida. Por favor, selecciona un número de canal: ");
+            }
+        }
+
+        // Iniciar el flujo de login
+        username = promptUsername(in, out, reader);
+        String welcomeMessage = in.readLine();
+        System.out.println(welcomeMessage);
+
+        // Continuar con la interacción de mensajes
+        promptForMessage(reader);
+    }
+
+
+    private static String promptUsername(BufferedReader in, PrintWriter out, BufferedReader reader) throws IOException {
+        String username;
+        boolean usernameTaken = false;
+
+        do {
+            System.out.print("Introduce tu nombre de usuario (sin espacios): ");
+            username = reader.readLine().trim();
+            out.println(username);
+
+            String response = in.readLine();
+            if ("true".equalsIgnoreCase(response)) {
+                usernameTaken = true;
+                System.out.println("El usuario ya existe, elige otro nombre.");
+            } else {
+                usernameTaken = false;
+            }
+        } while (usernameTaken);
+
+        return username;
+    }
+
+    private static void promptForMessage(BufferedReader reader) {
+        System.out.println("Pulsa 'Enter' para introducir mensajes");
+        while (true) {
+            try {
+                String line = reader.readLine();
+                if (line.isEmpty()) {
+                    openMessageInputDialog();
+                    break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void openMessageInputDialog() {
+        JFrame frame = new JFrame("Enviar mensaje");
+        frame.setSize(400, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JTextField messageField = new JTextField();
+        panel.add(new JLabel("Escribe tu mensaje:"));
+        panel.add(messageField);
+
+        JButton okButton = new JButton("OK");
+        okButton.addActionListener(e -> {
+            String message = messageField.getText();
+            if (!message.isEmpty()) {
+                out.println(message);
+                System.out.println("Mensaje enviado: " + message);
+            }
+            frame.dispose();
+        });
+        panel.add(okButton);
+
+        JButton cancelButton = new JButton("Cancelar");
+        cancelButton.addActionListener(e -> frame.dispose());
+        panel.add(cancelButton);
+
+        frame.setVisible(true);
+    }
+
+    private static List<String> loadChannels(String fileName) throws IOException {
+        List<String> channels = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channels.add(line.trim());
+            }
+        }
+        return channels;
+    }
+}

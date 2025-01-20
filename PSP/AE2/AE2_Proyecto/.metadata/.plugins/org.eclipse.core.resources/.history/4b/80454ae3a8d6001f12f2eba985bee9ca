@@ -1,0 +1,21 @@
+package es.psp.ae2;
+
+public class RecibirMensajes implements Runnable {
+    private BufferedReader in;
+
+    public RecibirMensajes(BufferedReader in) {
+        this.in = in;
+    }
+
+    @Override
+    public void run() {
+        try {
+            String mensaje;
+            while ((mensaje = in.readLine()) != null) {
+                System.out.println(mensaje);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

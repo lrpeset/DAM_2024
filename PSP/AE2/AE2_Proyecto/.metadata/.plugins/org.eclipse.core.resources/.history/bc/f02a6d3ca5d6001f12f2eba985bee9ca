@@ -1,0 +1,29 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+
+public class ClientReceiverThread extends Thread {
+    private BufferedReader in;
+    
+    public ClientReceiverThread(Socket socket) {
+        try {
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            String message;
+            while ((message = in.readLine()) != null) {
+                // Muestra el mensaje recibido del servidor
+                System.out.println(message);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

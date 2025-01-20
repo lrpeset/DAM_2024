@@ -1,0 +1,52 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+
+public class Cliente {
+    private static final String SERVIDOR = "localhost"; // Dirección del servidor
+    private static final int PUERTO = 12345;           // Puerto del servidor
+    private BufferedReader input;  // Para leer los mensajes del servidor
+    private PrintWriter output;    // Para enviar mensajes al servidor
+    private Socket socket;         // Conexión con el servidor
+
+    public Cliente() {}
+
+    public void iniciar() throws IOException {
+        socket = new Socket(SERVIDOR, PUERTO);
+        input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        output = new PrintWriter(socket.getOutputStream(), true);
+
+        // Recibir la lista de canales disponibles
+        String mensaje;
+        while ((mensaje = input.readLine()) != null) {
+            System.out.println(mensaje);  // Mostrar los canales
+            if (mensaje.startsWith("Selecciona")) {  // Cuando se le pide que elija un canal
+                int canalSeleccionado = Integer.parseInt(input.readLine()) - 1;  // El cliente elige el canal
+                output.println(canalSeleccionado + 1);  // Enviar al servidor el canal elegido
+
+                // Solicitar nombre de usuario
+                System.out.println("Introduce tu nombre de usuario:");
+                String username = new BufferedReader(new InputStreamReader(System.in)).readLine();
+                output.println(username);  // Enviar nombre de usuario al servidor
+
+                // Recibir confirmación
+                String respuesta = input.readLine();
+                if ("OK".equals(respuesta)) {
+                    System.out.println("¡Te has unido al canal!");
+                } else {
+                    System.out.println(respuesta);  // Mostrar mensaje de error si el nombre ya está en uso
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            Cliente cliente = new Cliente();
+            cliente.iniciar();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

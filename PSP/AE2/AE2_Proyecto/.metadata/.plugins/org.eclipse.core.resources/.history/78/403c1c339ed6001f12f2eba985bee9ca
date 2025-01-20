@@ -1,0 +1,40 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+
+public class ClientMain {
+
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket("localhost", 5000);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+        BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
+
+        // Solicitar nombre de usuario hasta que sea único
+        String username;
+        while (true) {
+            System.out.println(in.readLine());  // "Introduce tu nombre de usuario:"
+            username = userInput.readLine();
+            out.println(username);
+
+            String response = in.readLine();
+            if (response.equals("El nombre de usuario ya está en uso. Por favor, introduce otro.")) {
+                System.out.println(response);
+            } else {
+                break;  // Nombre de usuario válido, salimos del bucle
+            }
+        }
+
+        // Solicitar canal
+        System.out.println(in.readLine());  // "Selecciona un canal:"
+        String channel = userInput.readLine();
+        out.println(channel);
+
+        // El resto de la interacción con el servidor
+        // Aquí se puede agregar lógica para enviar mensajes, etc.
+
+        socket.close();
+    }
+}

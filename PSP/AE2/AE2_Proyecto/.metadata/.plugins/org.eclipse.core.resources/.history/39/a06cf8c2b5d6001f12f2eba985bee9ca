@@ -1,0 +1,72 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Servidor {
+    private static final int PUERTO = 5000;
+    static List<PrintWriter> clientes = new ArrayList<>();
+    static Map<String, List<PrintWriter>> canales = new HashMap<>();
+    private static Set<String> nombresUsuarios = new HashSet<>();
+    private static final String FILE_PATH = "src/channels.txt";
+
+    public static void main(String[] args) {
+        cargarCanales();
+
+        try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
+            System.out.println("Servidor iniciado en el puerto " + PUERTO);
+
+            while (true) {
+                Socket clienteSocket = serverSocket.accept();
+                System.out.println("Cliente conectado: " + clienteSocket.getInetAddress());
+
+                ServidorHilo hilo = new ServidorHilo(clienteSocket);
+                new Thread(hilo).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void cargarCanales() {
+        List<String> canalesDisponibles = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                canalesDisponibles.add(linea); // Agregar cada línea al listado de canales
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        for (String canal : canalesDisponibles) {
+            if (!canales.containsKey(canal)) {
+                canales.put(canal, new ArrayList<>());  // Inicializar la lista de clientes del canal
+            }
+        }
+    }
+
+
+    public static List<String> obtenerCanales() {
+        return new ArrayList<>(canales.keySet());  // Devuelve la lista de canales disponibles
+    }
+
+    // Método para enviar un mensaje a todos los clientes de un canal específico
+    static void enviarAMensajesCanal(String canal, String mensaje) {
+        List<PrintWriter> listaCanal = canales.get(canal);
+        if (listaCanal != null) {
+            for (PrintWriter pw : listaCanal) {
+                pw.println(mensaje);
+            }
+        }
+    }
+
+    public static synchronized boolean verificarNombreUsuario(String username) {
+        if (nombresUsuarios.contains(username)) {
+            return false;  // Nombre de usuario ya existe
+        }
+        nombresUsuarios.add(username);
+        return true;  // Nombre de usuario disponible
+    }
+}

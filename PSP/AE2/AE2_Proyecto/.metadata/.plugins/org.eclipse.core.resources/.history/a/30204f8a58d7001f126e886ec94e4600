@@ -1,0 +1,80 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Servidor {
+	private static final int PUERTO = 5000;
+	static Map<String, List<ServidorHilo>> canales = new HashMap<>();
+
+	public static void main(String[] args) {
+		cargarCanales();
+
+		if (canales.isEmpty()) {
+			System.err.println("No se cargaron canales. Revisa el archivo canales.txt.");
+			System.exit(1);
+		}
+
+		try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
+			System.out.println("Servidor iniciado en el puerto " + PUERTO);
+
+			while (true) {
+				Socket clienteSocket = serverSocket.accept();
+				System.out.println("Cliente conectado: " + clienteSocket.getInetAddress());
+
+				ServidorHilo hilo = new ServidorHilo(clienteSocket);
+				hilo.start();
+			}
+		} catch (IOException e) {
+			System.err.println("Error en el servidor: " + e.getMessage());
+		}
+	}
+
+	private static void cargarCanales() {
+		try (BufferedReader reader = new BufferedReader(new FileReader("canales.txt"))) {
+			String linea;
+			while ((linea = reader.readLine()) != null) {
+				String[] partes = linea.split("-");
+				if (partes.length == 2) {
+					String numeroCanal = partes[0].trim();
+					String nombreCanal = partes[1].trim();
+					canales.put(numeroCanal, new ArrayList<>());
+				}
+			}
+		} catch (IOException e) {
+			System.err.println("Error al cargar canales: " + e.getMessage());
+		}
+	}
+
+	public static synchronized void enviarMensaje(String canal, String mensaje, ServidorHilo remitente) {
+		if (canales.containsKey(canal)) {
+			List<ServidorHilo> usuarios = canales.get(canal);
+			synchronized (usuarios) {
+				for (ServidorHilo usuario : usuarios) {
+					if (usuario != remitente) {
+						usuario.enviarMensaje(mensaje);
+					}
+				}
+			}
+		}
+	}
+
+	public static synchronized void registrarUsuario(String canal, ServidorHilo usuario) {
+		if (canales.containsKey(canal)) {
+			List<ServidorHilo> usuarios = canales.get(canal);
+			synchronized (usuarios) {
+				usuarios.add(usuario);
+			}
+		}
+	}
+
+	public static synchronized void eliminarUsuario(String canal, ServidorHilo usuario) {
+		if (canales.containsKey(canal)) {
+			List<ServidorHilo> usuarios = canales.get(canal);
+			synchronized (usuarios) {
+				usuarios.remove(usuario);
+			}
+		}
+	}
+}

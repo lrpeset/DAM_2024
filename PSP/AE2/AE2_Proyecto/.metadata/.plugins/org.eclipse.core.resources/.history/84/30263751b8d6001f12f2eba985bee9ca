@@ -1,0 +1,57 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class Servidor {
+    // Lista de canales disponibles
+    private static List<String> canales = Arrays.asList("cine", "música", "videojuegos", "literatura");
+
+    // Mapa que mantiene los usuarios por canal
+    public static Map<String, CopyOnWriteArrayList<String>> usuariosPorCanal = new HashMap<>();
+
+    // Método para obtener los canales disponibles
+    public static List<String> obtenerCanales() {
+        return canales;
+    }
+
+    // Método para verificar si el nombre de usuario está en uso
+    public static boolean verificarNombreUsuario(String username) {
+        // Verifica si el nombre de usuario ya está en alguno de los canales
+        for (Map.Entry<String, CopyOnWriteArrayList<String>> entry : usuariosPorCanal.entrySet()) {
+            if (entry.getValue().contains(username)) {
+                return false; // El usuario ya está en el canal
+            }
+        }
+        return true; // El nombre de usuario está disponible
+    }
+
+    // Método para enviar mensajes a todos los usuarios de un canal
+    public static void enviarAMensajesCanal(String canal, String mensaje) {
+        List<String> usuarios = usuariosPorCanal.getOrDefault(canal, new CopyOnWriteArrayList<>());
+        for (String usuario : usuarios) {
+            // Aquí envías el mensaje a cada usuario. Asegúrate de que el cliente pueda recibirlo.
+            System.out.println("Enviado a " + usuario + ": " + mensaje);
+        }
+    }
+
+    // Método para obtener los usuarios de un canal
+    public static String obtenerUsuariosCanal(String canal) {
+        List<String> usuarios = usuariosPorCanal.getOrDefault(canal, new CopyOnWriteArrayList<>());
+        return String.join(", ", usuarios);
+    }
+
+    // Método principal para iniciar el servidor
+    public static void main(String[] args) {
+        try (ServerSocket serverSocket = new ServerSocket(12345)) {
+            while (true) {
+                Socket clienteSocket = serverSocket.accept();
+                new Thread(new ServidorHilo(clienteSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

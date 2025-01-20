@@ -1,0 +1,126 @@
+package es.psp.ae2;
+
+import java.io.*;
+import java.net.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+public class ServidorHilo implements Runnable {
+	private Socket clienteSocket;
+	private BufferedReader input;
+	private PrintWriter output;
+	private Map<String, List<ServidorHilo>> canales;
+	private String canalActual;
+	private String nombreUsuario;
+
+	public ServidorHilo(Socket clienteSocket, Map<String, List<ServidorHilo>> canales) {
+		this.clienteSocket = clienteSocket;
+		this.canales = canales;
+	}
+
+	@Override
+	public void run() {
+	    try {
+	        input = new BufferedReader(new InputStreamReader(clienteSocket.getInputStream()));
+	        output = new PrintWriter(clienteSocket.getOutputStream(), true);
+
+	        // Mostrar canales disponibles al cliente
+	        output.println("Canales disponibles:");
+	        List<String> canalList = new ArrayList<>(canales.keySet());
+	        for (int i = 0; i < canalList.size(); i++) {
+	            output.println((i + 1) + "- " + canalList.get(i));
+	        }
+
+	        // Solicitar selección de canal por consola
+	        output.println("Selecciona un canal (número):");
+	        output.println("(Pulsa intro para abrir la ventana de mensajería)");
+	        String canalSeleccionado = input.readLine().trim(); // Lee la selección de canal desde consola
+
+	        int canalIndice;
+	        try {
+	            canalIndice = Integer.parseInt(canalSeleccionado) - 1; // Convertir a índice 0-based
+	            if (canalIndice < 0 || canalIndice >= canalList.size()) {
+	                output.println("Canal no válido. Desconectando.");
+	                cerrarConexion();
+	                return;
+	            }
+	        } catch (NumberFormatException e) {
+	            output.println("Entrada no válida. Por favor, ingresa un número válido.");
+	            cerrarConexion();
+	            return;
+	        }
+
+	        canalActual = canalList.get(canalIndice);
+
+	        // Solicitar nombre de usuario por consola
+	        output.println("Introduce tu nombre de usuario:");
+	        while (true) {
+	            nombreUsuario = input.readLine(); // Leer nombre de usuario desde consola
+	            synchronized (canales.get(canalActual)) {
+	                boolean existe = canales.get(canalActual).stream()
+	                        .anyMatch(hilo -> hilo.nombreUsuario.equals(nombreUsuario));
+	                if (!existe) {
+	                    canales.get(canalActual).add(this);
+	                    break;
+	                }
+	            }
+	            output.println("Nombre de usuario ya en uso. Por favor, elige otro:");
+	        }
+
+	        // Confirmar conexión al canal
+	        output.println("Conexión exitosa al canal: " + canalActual);
+	        enviarATodos("Usuario " + nombreUsuario + " se ha unido al canal.");
+
+	        // Aquí comienza la interacción con la ventana emergente para los mensajes
+	        String mensaje;
+	        while ((mensaje = input.readLine()) != null) {
+	            if (mensaje.equalsIgnoreCase("whois")) {
+	                // Enviar lista de usuarios conectados en el canal
+	                enviarATodos("Usuarios conectados al canal " + canalActual + ": " + obtenerUsuarios());
+	            } else if (mensaje.equalsIgnoreCase("channels")) {
+	                // Enviar lista de canales disponibles
+	                enviarATodos("Canales disponibles: " + canales.keySet());
+	            } else if (mensaje.equalsIgnoreCase("exit")) {
+	                // El usuario abandona el canal y cierra la conexión
+	                enviarATodos("Usuario " + nombreUsuario + " ha abandonado el canal.");
+	                desconectar();
+	                break;
+	            } else if (mensaje.startsWith("@canal")) {
+	                // Enviar el mensaje a un canal específico
+	                String[] partes = mensaje.split(" ", 2);
+	                if (partes.length == 2) {
+	                    String canalDestino = partes[0].substring(7); // Canal destino
+	                    String mensajeCanal = partes[1]; // Mensaje
+	                    enviarATodosCanal(canalDestino, mensajeCanal);
+	                }
+	            } else {
+	                // Enviar mensaje normal
+	                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+	                String mensajeFormateado = "[" + timestamp + "] " + nombreUsuario + ": " + mensaje;
+	                enviarATodos(mensajeFormateado);
+	            }
+	        }
+	    } catch (IOException e) {
+	        System.err.println("Error con el cliente: " + e.getMessage());
+	    } finally {
+	        desconectar();
+	    }
+	}
+
+	private String obtenerUsuarios() {
+	    StringBuilder sb = new StringBuilder();
+	    for (ServidorHilo hilo : canales.get(canalActual)) {
+	        sb.append(hilo.nombreUsuario).append(", ");
+	    }
+	    return sb.length() > 0 ? sb.substring(0, sb.length() - 2) : "";
+	}
+
+	private void enviarATodosCanal(String canalDestino, String mensaje) {
+	    synchronized (canales.get(canalDestino)) {
+	        for (ServidorHilo hilo : canales.get(canalDestino)) {
+	            hilo.output.println("[Canal " + canalDestino + "] " + mensaje);
+	        }
+	    }
+	}
+
